@@ -1,9 +1,11 @@
 # WX-station-LoRa-WiFi
-An APRS LoRa weather station with a TTGO module.
+An APRS LoRa weather station with a TTGO T3 module.
 
-I found the original idea written by DJ7OO : http://www.kh-gps.de/LoRa_WX.htm
+This is the description of a Weather station build with a TTGO T3 module that can :
+- measure pressure, temperature, humidity, wind speed, wind direction, rain fall
+- transmit datas to APRS in LoRa, APRS-IS, Wunderground & MQTT via WiFi
+- display datas on the OLED screen
 
-I adapted it with new libraries, added a configuration file, better routines, etc...
-
-The minimal version uses a BME280 sensor that measures pressure, humidity, temperature which is connected to a TTGO T3 v1.6.1 module.
-A rain sensor, a wind vane and a anemometer can be added to make a complete station.
+The pressure, temperature & humidity are measured with a BME280 multi-sensor on the i2C bus.
+The wind direction and speed are measured in ModBus mode via RS485, allowing long distance measurements.
+The rain fall is measured with a rain bucket gauge.
