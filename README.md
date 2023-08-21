@@ -13,3 +13,10 @@ The wind direction and speed are measured in ModBus mode via RS485, allowing lon
 The rain fall is measured with a rain bucket gauge.
 
 ![wx-station-screen1](https://github.com/tk5ep/WX-station-LoRa-WiFi/assets/1655173/b155929d-1387-497c-858d-efabd9410c22)
+
+Hardware :
+The used module is a  TTGO T3 v1.6.1 bought on Aliexpress at the LilyGp shop, i can only recommend.
+
+The wind speed and direction sensors are a ModBus RS485 version that can be found (here on Aliexpress] (https://www.aliexpress.com/item/1005005500304078.html)
+There are different models for RS485 sensors. Be aware that the library used here has been written by me for the above sensors.
+The main difference is that the ModBus address is set by writing into a register, not sending a ModBus command.
