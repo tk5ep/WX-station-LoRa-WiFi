@@ -12,9 +12,7 @@ The pressure, temperature & humidity are measured with a BME280 multi-sensor on 
 The wind direction and speed are measured in ModBus mode via RS485, allowing long distance measurements.
 The rain fall is measured with a rain bucket gauge.
 
-![wx-station-screen1](https://github.com/tk5ep/WX-station-LoRa-WiFi/assets/1655173/b155929d-1387-497c-858d-efabd9410c22)
-
-Hardware :
+**Hardware :**
 The used module is a  TTGO T3 v1.6.1 bought on Aliexpress at the LilyGp shop, i can only recommend.
 
 The wind speed and direction sensors are a ModBus RS485 version that can be found (here on Aliexpress] (https://www.aliexpress.com/item/1005005500304078.html)
