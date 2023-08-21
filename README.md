@@ -12,3 +12,4 @@ The pressure, temperature & humidity are measured with a BME280 multi-sensor on 
 The wind direction and speed are measured in ModBus mode via RS485, allowing long distance measurements.
 The rain fall is measured with a rain bucket gauge.
 
+![wx-station-screen1](https://github.com/tk5ep/WX-station-LoRa-WiFi/assets/1655173/b155929d-1387-497c-858d-efabd9410c22)
