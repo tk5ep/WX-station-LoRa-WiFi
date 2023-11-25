@@ -29,4 +29,4 @@ The libraries are common, except for the wind sensors which has been written by 
 
 All settings are done in editing the settings.h file.<br>
 
-More details on [my Web page](egloff.eu/index.php?option=com_content&view=article&id=283) 
+More details on [my Web page](https://egloff.eu/index.php?option=com_content&view=article&id=283) 
