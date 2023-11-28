@@ -92,6 +92,7 @@ const char* mqtt_broker =       "yourbrokeraddress";		// the MQTT server
 const int mqtt_port = 1883;									         // MQTT server port 1883 by default
 const char* mqtt_username =     "";								      // MQTT server username if needed, leave blank if not
 const char* mqtt_password =     "";								      // MQTT server password if needed, leave blank if not
+const byte mqtt_retained = 0;                                  // should the datas be retained ?
 const char* TOPIC_TEMP =        "tk5ep/qra/temp";				   // topic for the temperature
 const char* TOPIC_HUMI =        "tk5ep/qra/humi";				   // topic for the humidity
 const char* TOPIC_PRESS =       "tk5ep/qra/press";				   // topic for the pressure
