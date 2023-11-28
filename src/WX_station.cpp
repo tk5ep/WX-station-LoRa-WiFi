@@ -697,40 +697,28 @@ void MQTTpublish() {
     Serial.println(F("Publishing latest datas."));
     char buffer[6];
     
-    sprintf(buffer, "%.1f", tempC);                     // convert float to string before publishing
-    mqttclient.publish(TOPIC_TEMP, buffer , 0 );        // publish topic to broker Last parameter "retained" is 0 or 1
-    sprintf(buffer, "%.1f", humi);                      // convert float to string before publishing
-    mqttclient.publish(TOPIC_HUMI, buffer, 0  );
+    sprintf(buffer, "%.1f", tempC);                     		// convert float to string before publishing
+    mqttclient.publish(TOPIC_TEMP, buffer , mqtt_retained );        	// publish topic to broker Last parameter "retained" is 0 or 1
+    sprintf(buffer, "%.1f", humi);                      		// convert float to string before publishing
+    mqttclient.publish(TOPIC_HUMI, buffer, mqtt_retained  );
     sprintf(buffer, "%.1f", press);
-    mqttclient.publish(TOPIC_PRESS, buffer, 0  );
+    mqttclient.publish(TOPIC_PRESS, buffer, mqtt_retained  );
     
     #ifdef WITH_WIND
-      #ifdef DEBUG_MQTT
-        Serial.print("MQTT wind Dir : ");
-        Serial.println(windDir_avg2m);
-        Serial.print("MQTT wind Speed : ");
-        Serial.println(windSpeed_avg2m);
-        Serial.print("MQTT gust speed : ");
-        Serial.println(windgustSpeed);
-        Serial.print("MQTT gust dir : ");
-        Serial.println(windgustDir);
-
-      #endif
-      //memset(buffer, 0, sizeof buffer);
       sprintf(buffer, "%d", windDir_avg2m);
-      mqttclient.publish(TOPIC_WINDDIR, buffer,0);
+      mqttclient.publish(TOPIC_WINDDIR, buffer,mqtt_retained);
       sprintf(buffer, "%.1f", windSpeed_avg2m);
-      mqttclient.publish(TOPIC_WINDSPEED, buffer,0);
+      mqttclient.publish(TOPIC_WINDSPEED, buffer,mqtt_retained);
       sprintf(buffer, "%d", windgustDir);
-      mqttclient.publish(TOPIC_GUSTDIR, buffer,0);
+      mqttclient.publish(TOPIC_GUSTDIR, buffer,mqtt_retained);
       sprintf(buffer, "%.1f", windgustSpeed);
-      mqttclient.publish(TOPIC_GUSTSPEED, buffer,0);
+      mqttclient.publish(TOPIC_GUSTSPEED, buffer,mqtt_retained);
     #endif
     #ifdef WITH_RAIN
       sprintf(buffer, "%.2f", rain1hmm);                  // convert float to string before publishing
-      mqttclient.publish(TOPIC_RAIN, buffer , 0  );
+      mqttclient.publish(TOPIC_RAIN, buffer , mqtt_retained  );
       sprintf(buffer, "%.2f", rain24hmm);               // convert float to string before publishing
-      mqttclient.publish(TOPIC_RAIN24H, buffer , 0  );
+      mqttclient.publish(TOPIC_RAIN24H, buffer , mqtt_retained  );
     #endif
 }
 #endif
