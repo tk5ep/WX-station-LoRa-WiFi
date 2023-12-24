@@ -1,7 +1,7 @@
 # WX-station-LoRa-WiFi
 An APRS LoRa weather station with a TTGO T3 module.
 
-![Link Text](https://github.com/tk5ep/WX-station-LoRa-WiFi/blob/main/docs/TK5KP-13-1024px.jpg)
+![Link Text](images/TK5KP-13-zoom.jpg)
 
 This is the description of a Weather station build with a TTGO T3 module that can :
 - measure pressure, temperature, humidity, wind speed, wind direction, wind gust speed & direction, rain fall.
