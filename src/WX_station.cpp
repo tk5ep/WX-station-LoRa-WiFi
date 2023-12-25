@@ -2,9 +2,6 @@
 * LoRA APRS WX mini station by TK5EP
 * using new library, configuration file, WiFi
 *
-* v 0.1
-* 20/08/2023
-
 Hardware :
 ----------
 Build around a TTGO T3 LoRa ESP32 module
@@ -24,6 +21,7 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
+251223 Rearranging some routines.
 241223 Correcting some small bugs. Adding NTP, WiFi RSSI
 161223 Rearranging functions. Adding SHT31 support. Modifying MQTTpublish() to add a systematical connection to broker.
 101223 Modified Web server so it displays only the available datas. Preparing SHT31 sensor support
@@ -56,8 +54,8 @@ Updates :
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
-#include "NTP.h"                    //github.com/sstaub/NTP.git
-#include "settings_sample.h"         // config file
+#include "NTP.h"                    // github.com/sstaub/NTP.git
+#include "settings_punta.h"         // config file
 
 /********************************************************************
  _____              __ _                       _   _             
@@ -70,7 +68,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 String SOFTWARE_VERSION = "1.0" ;
-String SOFTWARE_DATE = "24.12.23";
+String SOFTWARE_DATE = "25.12.23";
 
 // define pins for a TTGO T3 module
 #define LORA_SCK 5                  // GPIO5    - SX1276 SCK
@@ -98,7 +96,6 @@ String Reset_Reason;                // String to hold the last RESET reason
 
 bool FIRSTLOOP = true;             // to check if it is the first loop
 bool timeoutFlag = false;           // to check if we had a Modbus timeout
-bool WIFICONNECTED = false;     // flag
 
 WiFiClient client;
 #ifdef WITH_MQTT
@@ -296,14 +293,8 @@ void setup() {
   #endif
 
   // boot info page on OLED
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setTextSize(2);
-  display.setCursor(15, 0);
-  display.print("APRS LoRa");
-  display.setCursor(5, 20);
-  display.print("WX station");
-  display.setTextSize(1);
+  line1 = "APRS LoRa";
+  line2 = "WX station";
   String line3="Set:";          // build line 3
   #ifdef WITH_APRS_LORA
     line3+="LORA ";
@@ -317,10 +308,20 @@ void setup() {
   #ifdef WITH_WUNDERGROUND
         line3+="WG";
   #endif
+  line4 = "by TK5EP v" + SOFTWARE_DATE;
+  line5 = "";
+
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setTextSize(2);
+  display.setCursor(0, 0);
+  display.print(line1);
+  display.setCursor(0, 20);
+  display.print(line2);
+  display.setTextSize(1);
   display.setCursor(0,40);
   display.print(line3);
   display.setCursor(0, 56);
-  line4 = "by TK5EP v" + SOFTWARE_DATE;
   display.print(line4);
   display.display();
   delay(5000);
@@ -337,7 +338,6 @@ void setup() {
     //ntp.ruleDST(DSTime);
     ntp.ruleSTD("CET", Last, Sun, Oct, 3, 60);   // last sunday in october 3:00, timezone +60min (+1 GMT)
     ntp.begin();      // NTP 
-
   #endif
 
 }  // setup() end
@@ -565,16 +565,18 @@ void WIFIconnect() {
  // init WiFi if needed
 //#if defined WITH_APRS_IS || defined WITH_MQTT || defined WITH_WUNDERGROUND
 #ifdef WITH_WIFI
+  Serial.print(F("WiFi trying to connect"));
+  line1 = "WiFi";
+  line2 = "Trying to connect...";
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.setTextSize(2);
   display.setCursor(0, 0);
-  display.print("WiFi");
+  display.print(line1);
   display.setTextSize(1);
   display.setCursor(0, 20);
-  display.print("Trying to connect...");
+  display.print(line2);
   display.display();
-  Serial.print(F("WiFi trying to connect"));
   
   // is we use a static IP, not DHCP
   if (WITH_STATIC_IP)                     
@@ -598,28 +600,33 @@ void WIFIconnect() {
   }
   // if connection succeeded
   if (WiFi.status() == WL_CONNECTED) {
-    WIFICONNECTED = true;
     Serial.print(F("\r\nWiFi connected IP address: "));
     Serial.println(WiFi.localIP());
     Serial.printf("RSSI %d dBm\r\n",WiFi.RSSI());
 
-    // Handle Web Server
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "text/html", index_html, processor);
-    });
-
-      // OTA
-    //AsyncElegantOTA.begin(&server);
-    AsyncElegantOTA.begin(&server, OTA_username, OTA_password);
-    server.begin();
     // display on OLED the connection process
-    display.clearDisplay();
-    display.setTextColor(WHITE);
+    char buffer[20];
+    sprintf(buffer,"IP : %u.%u.%u.%u", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
     line1= "WiFi";
     line2 = "Wifi connected to :";
     line3 = ssid;
-    line4 = "IP :" + String(WiFi.localIP());
+    line4 = buffer;
     line5 = "RSSI : " + String(WiFi.RSSI()) + " dBm";
+  } else {
+    Serial.println("\r\nWiFi failed");
+    WiFi.disconnect();
+
+    line1 = "WiFi";
+    line2 = "WiFi failed !";
+    line3 = "";
+    line5 = "";
+    if (WiFi.status() == WL_NO_SSID_AVAIL) {
+      Serial.println(F("SSID not found"));
+      line4 = "SSID not found";
+    }
+  }
+    display.clearDisplay();
+    display.setTextColor(WHITE);
     display.setTextSize(2);
     display.setCursor(0, 0);
     display.print(line1);
@@ -633,28 +640,16 @@ void WIFIconnect() {
     display.setCursor(0, 56);
     display.print(line5);
     display.display();
-    delay(2000);
-  } else {
-    WIFICONNECTED = false;
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setTextSize(2);
-    display.setCursor(0, 0);
-    display.print("WiFi");
-    display.setTextSize(1);
-    display.setCursor(0, 20);
-    display.print("Wifi failed !");
-    Serial.println("\r\nWiFi failed");
-    if (WiFi.status() == WL_NO_SSID_AVAIL) {
-      Serial.println(F("SSID not found"));
-      display.setTextSize(1);
-      display.setCursor(0, 32);
-      display.print(F("SSID not found"));
-    }
-    display.display();
-    WiFi.disconnect();
     delay(4000);
-  }
+
+    // Handle Web Server
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+      request->send_P(200, "text/html", index_html, processor);
+    });
+
+    // OTA
+    AsyncElegantOTA.begin(&server, OTA_username, OTA_password);
+    server.begin();
 #endif 
 }
 
