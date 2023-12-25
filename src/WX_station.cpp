@@ -659,8 +659,12 @@ Read BME280 sensor
 *************************************/
 void readBME() {
   // get BME280 values
-  //float p0= bme.readPressure();                      // pressure without altitude correction
-  //press = bme.seaLevelForAltitude(ALTITUDE,p0);   // pressure with altitude correction in tenth of hPa
+  float p0 = (bme.readPressure() / 100);  // pressure in hPa without altitude correction
+  #ifdef WITH_SEALEVELPRESSURE
+    press = bme.seaLevelForAltitude(ALTITUDE,p0);   // pressure with altitude correction
+    #else
+    press = p0;
+  #endif
   press = (bme.readPressure() / 100);  // pressure in hPa
   tempC = bme.readTemperature();        // tempC in Centigrade
   humi = bme.readHumidity();            // humidity in %
