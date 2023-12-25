@@ -50,10 +50,11 @@ bool DISPLAY_CARDINAL      = false;             // display directions on OLED. t
    Station coordinates
 ***************************************************/
 // PUNTA
-#define CALLSIGN           "NOCALL-13"           // callsign with SSID ex TK5EP-10
+#define CALLSIGN           "NOCALL-13"          // callsign with SSID ex TK5EP-10
 #define LATITUDE           "0000.00N"           // latitude in DDMM.MM NORTH ex : 4156.95N
 #define LONGITUDE          "00000.00E"          // longitude in DDDMM.MM EAST ex: 00845.26E
 uint16_t ALTITUDE          = 760;               // home altitude in meters
+#define WITH_SEALEVELPRESSURE		               // if pressure on sealevel has to be used
 
 /***************************************************
    Sensors
