@@ -2,6 +2,7 @@
 * LoRA APRS WX mini station by TK5EP
 * using new library, configuration file, WiFi
 *
+
 Hardware :
 ----------
 Build around a TTGO T3 LoRa ESP32 module
@@ -21,7 +22,8 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
-251223 Rearranging some routines.
+261223 Added APRS digipeating possibility
+251223 Rearranging some routines. Added sealevel pressure correction.
 241223 Correcting some small bugs. Adding NTP, WiFi RSSI
 161223 Rearranging functions. Adding SHT31 support. Modifying MQTTpublish() to add a systematical connection to broker.
 101223 Modified Web server so it displays only the available datas. Preparing SHT31 sensor support
@@ -68,7 +70,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 String SOFTWARE_VERSION = "1.0" ;
-String SOFTWARE_DATE = "25.12.23";
+String SOFTWARE_DATE = "2023.12.26";
 
 // define pins for a TTGO T3 module
 #define LORA_SCK 5                  // GPIO5    - SX1276 SCK
@@ -110,7 +112,6 @@ float tempC, tempF, humi, press;
 #ifdef WITH_BME280
   // BME280 globals
   bool bme_status = false;
-  //#define SEALEVELPRESSURE_HPA (1013.25)  //
   Adafruit_BME280 bme;   // BME280 init
 #endif
 
@@ -136,7 +137,6 @@ const unsigned char nolink [] PROGMEM = {
 	0x40, 0x00, 0x60, 0x78, 0x30, 0xcc, 0x18, 0x06, 0x0c, 0x06, 0x06, 0x06, 0x13, 0x8c, 0x31, 0xc8, 
 	0x60, 0x60, 0x60, 0x30, 0x60, 0x18, 0x33, 0x8c, 0x1e, 0x06, 0x00, 0x02
 };
-
 
 // rain sensor
 #ifdef WITH_RAIN
@@ -665,7 +665,7 @@ void readBME() {
     #else
     press = p0;
   #endif
-  press = (bme.readPressure() / 100);  // pressure in hPa
+
   tempC = bme.readTemperature();        // tempC in Centigrade
   humi = bme.readHumidity();            // humidity in %
   if (tempC > 100) {                    // Houston we've a problem ! BME has been disconnected or broken, restart to get at least a hand on the system with OTA
@@ -981,7 +981,11 @@ send LoRa data via APRS
 void send2APRS_LoRa() {
   LoRaString = "";              // clear the string
   LoRaString = CALLSIGN;
-  LoRaString += (">WX:!");    // this is for APRS LoRa
+  LoRaString += ">WX";
+  #ifdef WITH_DIGIPEATING
+    LoRaString += ",WIDE1-1";
+  #endif
+  LoRaString += (":!");    // this is for APRS LoRa
   LoRaString += APRSString;
 
   display.clearDisplay();
@@ -1362,6 +1366,4 @@ void MQTTpublish() {
     #endif
     mqttclient.disconnect();
   }
-  #endif 
-
-    
+  #endif
