@@ -5,12 +5,12 @@ An APRS LoRa weather station with a TTGO T3 module.
 
 This is the description of a Weather station build with a TTGO T3 module that can :
 - measure pressure, temperature, humidity, wind speed, wind direction, wind gust speed & direction, rain fall.
-- transmit datas to APRS in LoRa, APRS-IS, Wunderground & MQTT via WiFi.
+- transmit datas to APRS in LoRa or APRS-IS, to Wunderground & MQTT broker via WiFi.
 - display datas on the OLED screen.
-- display a Web page server with data display.
+- display a Web page with data display.
 - upgrade via OTA.
 
-The pressure, temperature & humidity are measured with a BME280 multi-sensor on the i2C bus. SHT31 sensor is implemented as well, but doesn't measure the pressure.
+The pressure, temperature & humidity are measured with a BME280 or SHT31 sensor multi-sensor on the i2C bus.
 The wind direction and speed are measured in ModBus mode via RS485, allowing long distance measurements.
 The rain fall is measured with a rain bucket gauge.
 
