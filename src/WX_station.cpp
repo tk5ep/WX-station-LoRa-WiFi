@@ -22,8 +22,11 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
+311223 Added parameters in settings_sample for daylight saving time. Reworked variables to save some memory. BME280 into forced mode for better measures in WX station as per datasheet.
+291223 Changed from ASyncElegantOTA lib to ElegantOTA. Needs declaration in platformio.ini
+281223 Added RS485 checks if sensors are alive. Report state via new MQTT topics. 
 261223 Added APRS digipeating possibility
-251223 Rearranging some routines. Added sealevel pressure correction.
+251223 Rearranging some routines. Added sealevel pressure correction. New WITH_SEALEVELPRESSURE parameter inn settings.
 241223 Correcting some small bugs. Adding NTP, WiFi RSSI
 161223 Rearranging functions. Adding SHT31 support. Modifying MQTTpublish() to add a systematical connection to broker.
 101223 Modified Web server so it displays only the available datas. Preparing SHT31 sensor support
@@ -55,9 +58,9 @@ Updates :
 #include <PubSubClient.h>           // by Nick O'Leary
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>
+#include <ElegantOTA.h>
 #include "NTP.h"                    // github.com/sstaub/NTP.git
-#include "settings_sample.h"         // config file
+#include "settings_punta.h"         // config file
 
 /********************************************************************
  _____              __ _                       _   _             
@@ -70,7 +73,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 String SOFTWARE_VERSION = "1.0" ;
-String SOFTWARE_DATE = "2023.12.26";
+String SOFTWARE_DATE = "2023.12.31";
 
 // define pins for a TTGO T3 module
 #define LORA_SCK 5                  // GPIO5    - SX1276 SCK
@@ -97,15 +100,14 @@ uint64_t microSecondsSinceBoot;
 String Reset_Reason;                // String to hold the last RESET reason
 
 bool FIRSTLOOP = true;             // to check if it is the first loop
-bool timeoutFlag = false;           // to check if we had a Modbus timeout
 
 WiFiClient client;
 #ifdef WITH_MQTT
   PubSubClient mqttclient(client);
 #endif
 
-String LoRaString = "";
-String APRSString = "";
+String LoRaString   = "";
+String APRSString   = "";
 String APRSISString = "";
 
 float tempC, tempF, humi, press;
@@ -148,18 +150,20 @@ const unsigned char nolink [] PROGMEM = {
 
 // wind sensors
 #ifdef WITH_WIND
-  HardwareSerial rs485Serial(1);      // declare UART0
-
-  int currentDir = 0;                 // instant wind direction ModBus value in 8 direction values 
-  volatile int windDirAvg[120];       // array of 120 ints to keep track of 2 minute average
-  int windDir_avg2m = 0;              // 2 minute average wind direction in degrees 0-360
-  float currentSpeedKmh = 0;          // instant wind speed ModBus value in m/s
-  volatile float windSpeedAvg[120];   // to keep track of last 120 wind speed measures
-  float windSpeed_avg2m = 0;          // 2 minute average wind speed in km/h calculate from above array
-  float windgustSpeed= 0;             // wind gust speed max value
-  int windgustDir= 0;                 // wind gust dir max value
-  float windgust_10m[10];             // array of 10 floats to keep track of 10 minute max gust in m/s
-  int windgustDir_10m[10];            // array of 10 float values to keep track of the wind gust direction
+  HardwareSerial rs485Serial(1);            // declare UART0
+  bool RS485WindSpeedSensorTimeout = false; // flag to check if the wind sensor is answering
+  bool RS485WindDirSensorTimeout   = false; // flag to check if the wind sensor is answering
+  int currentDir                   = 0;     // instant wind direction ModBus value in 8 direction values 
+  volatile int windDirAvg[120];             // array of 120 ints to keep track of 2 minute average
+  int windDir_avg2m                = 0;     // 2 minute average wind direction in degrees 0-360
+  float currentSpeedms             = 0;     // instant wind speed ModBus value in m/s
+  float currentSpeedKmh            = 0;     // instant wind speed ModBus value in km/h
+  volatile float windSpeedAvg[120];         // to keep track of last 120 wind speed measures
+  float windSpeed_avg2m            = 0;     // 2 minute average wind speed in km/h calculate from above array
+  float windgustSpeed              = 0;     // wind gust speed max value
+  int windgustDir                  = 0;     // wind gust dir max value
+  float windgust_10m[10];                   // array of 10 floats to keep track of 10 minute max gust in m/s
+  int windgustDir_10m[10];                  // array of 10 float values to keep track of the wind gust direction
 #endif
 
 #ifdef WITH_WIFI
@@ -193,7 +197,7 @@ void CalcWind();
 void changeRS485address();
 void MQTTconnect();
 void MQTTpublish();
-
+void onOTAEnd(bool success);
 
 /*****************************
  _____      _               
@@ -239,6 +243,13 @@ void setup() {
   #ifdef WITH_BME280
     // init BME280
     bme_status = bme.begin(BME280_I2C);  //address either 0x76 or 0x77
+     //BME280 weather station settings corresponding to datasheet
+    bme.setSampling(Adafruit_BME280::MODE_FORCED, // Force reading after delayTime
+                  Adafruit_BME280::SAMPLING_X1, // Temperature sampling set to 1
+                  Adafruit_BME280::SAMPLING_X1, // Pressure sampling set to 1
+                  Adafruit_BME280::SAMPLING_X1, // Humidity sampling set to 1
+                  Adafruit_BME280::FILTER_OFF   // Filter off - immediate 100% step response
+                );
 
     if (!bme_status) {
       bme_status = true;
@@ -333,11 +344,13 @@ void setup() {
 
   #ifdef WITH_WIFI
     WIFIconnect();    // connect to WiFi AP
-    //http://www.timezoneconverter.com/cgi-bin/zoneinfo?s=standard&tz=Europe/Paris
-    ntp.ruleDST("CEST", Last, Sun, Mar, 2, 120); // last sunday in march 2:00, timetone +120min (+1 GMT + 1h summertime offset)
-    //ntp.ruleDST(DSTime);
-    ntp.ruleSTD("CET", Last, Sun, Oct, 3, 60);   // last sunday in october 3:00, timezone +60min (+1 GMT)
-    ntp.begin();      // NTP 
+    // NTP
+    ntp.ruleDST(DSTzone, DSTweek, DSTwday, DSTmonth, DSTwday, DSToffset); 
+    ntp.ruleSTD(STDzone, STDweek, STDwday, STDmonth, STDwday, STDoffset); 
+    ntp.begin();
+    // OTA
+    ElegantOTA.begin(&server, OTA_username, OTA_password);
+    ElegantOTA.onEnd(onOTAEnd);   // to report if OTA update has worked
   #endif
 
 }  // setup() end
@@ -354,6 +367,7 @@ void setup() {
                   |_|    
 *****************************/
 void loop() {
+  ElegantOTA.loop();
   // this is the main counter that counts every second
   if (millis() - lastSecond >= 1000) {
     // increment the counter by 1 second, this is the base of all next counters (2min, 10 min, etc..)
@@ -388,27 +402,26 @@ void loop() {
 */      
     // read wind sensors anc calculate wind infos
     #ifdef WITH_WIND
-        timeoutFlag = false;    // set the timeout flag
+        RS485WindSpeedSensorTimeout = false;    // set the timeout flags
+        RS485WindDirSensorTimeout   = false;
         // read wind speed and direction
-        currentSpeedKmh = wind_rs485::readWindSpeed(AddressSpeedSensor);    // read the wind speed, returns m/s or -1 if no answer from sensor
+        currentSpeedms  = wind_rs485::readWindSpeed(AddressSpeedSensor);    // read the wind speed, returns m/s or -1 if no answer from sensor
         delay(200);                                                         // needed to chain sensor readings
-        currentDir = wind_rs485::readWindDirection(AddressDirSensor);       // read the wind direction, returns degrees 0-360 or -1 if no answer from sensor
+        currentDir      = wind_rs485::readWindDirection(AddressDirSensor);  // read the wind direction, returns degrees 0-360 or -1 if no answer from sensor
         // check if the ModBus sensors are answering
-        if (currentSpeedKmh == -1)                // if we receive a timeout warning
+        if (currentSpeedms == -1)                                          // if we receive a timeout warning
         {
           Serial.println(F("Wind Speed ModBus timeout !"));
           currentSpeedKmh = 0;
-          timeoutFlag = true;
+          RS485WindSpeedSensorTimeout = true;                               // set the timeout flag
         }
-        else {
-          currentSpeedKmh = currentSpeedKmh * 3.6;        // convert in km/h
-          }
-
-        if (currentDir == -1 )                // if we receive a timeout warning
+        else currentSpeedKmh = currentSpeedms * 3.6;                       // convert into km/h
+          
+        if (currentDir == -1 )                                              // if we receive a timeout warning
         {
           Serial.println(F("Wind direction ModBus timeout !"));
           currentDir = 0 ;
-          timeoutFlag = true;
+          RS485WindDirSensorTimeout = true;
         }
         // compute all wind datas
         CalcWind();
@@ -421,10 +434,6 @@ void loop() {
       TXcounter = 0;                                  // TXcounter reset
       //Serial.print("Wifi status : ");
       //Serial.println(WiFi.status());
-
-      if (FIRSTLOOP) {
-        FIRSTLOOP = false;
-      }
 
         // read BME280 sensor
         #ifdef WITH_BME280
@@ -442,6 +451,12 @@ void loop() {
             humi = 0;
           }
         #endif
+
+      if (FIRSTLOOP) {
+        FIRSTLOOP = false;
+        PrintOLED();      // display datas at startup before
+        delay(3000);
+      }
 
       build_APRSbeacon();         // build the LoRa beacon string
       #ifdef WITH_APRS_LORA
@@ -646,9 +661,6 @@ void WIFIconnect() {
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
       request->send_P(200, "text/html", index_html, processor);
     });
-
-    // OTA
-    AsyncElegantOTA.begin(&server, OTA_username, OTA_password);
     server.begin();
 #endif 
 }
@@ -658,6 +670,7 @@ void WIFIconnect() {
 Read BME280 sensor 
 *************************************/
 void readBME() {
+  bme.takeForcedMeasurement(); // has no effect in normal mode
   // get BME280 values
   float p0 = (bme.readPressure() / 100);  // pressure in hPa without altitude correction
   #ifdef WITH_SEALEVELPRESSURE
@@ -877,10 +890,7 @@ void PrintOLED() {
   display.setTextSize(2);
   display.setCursor(0, 0);
   display.print(CALLSIGN);
-  // if RS485 linkbroken, display a warning on OLED
-    if (timeoutFlag) {
-    display.drawBitmap(110, 0,  nolink, 16, 14, WHITE);
-  }
+
     
   display.setTextSize(1);
   #ifdef WITH_BME280          // display pressure only if available
@@ -910,6 +920,10 @@ void PrintOLED() {
   display.println("mm");
 #endif
 #ifdef WITH_WIND
+  // if RS485 linkbroken, display a warning on OLED
+    if (RS485WindSpeedSensorTimeout || RS485WindDirSensorTimeout) {
+    display.drawBitmap(110, 0,  nolink, 16, 14, WHITE);
+  }
   display.setCursor(0, 56);
   display.print("WIND:");
   display.print (windSpeed_avg2m,1);     // in km/h
@@ -1329,7 +1343,9 @@ void MQTTconnect(){
     }
 }
 
-//***************************************************************************************************
+/**************************************************************************
+ * publishing on MQTT brocker
+ **************************************************************************/
 void MQTTpublish() {
       // Publish and subscribe
 
@@ -1340,9 +1356,9 @@ void MQTTpublish() {
     Serial.println(F("Publishing latest datas."));
     char buffer[6];
     
-    sprintf(buffer, "%.1f", tempC);                           // convert float to string before publishing
+    sprintf(buffer, "%.2f", tempC);                           // convert float to string before publishing
     mqttclient.publish(TOPIC_TEMP, buffer , mqtt_retained );  // publish topic to broker Last parameter "retained" is 0 or 1
-    sprintf(buffer, "%.1f", humi);                            // convert float to string before publishing
+    sprintf(buffer, "%.2f", humi);                            // convert float to string before publishing
     mqttclient.publish(TOPIC_HUMI, buffer, mqtt_retained  );
     sprintf(buffer, "%.1f", press);
     mqttclient.publish(TOPIC_PRESS, buffer, mqtt_retained  );
@@ -1357,7 +1373,13 @@ void MQTTpublish() {
       mqttclient.publish(TOPIC_GUSTDIR, buffer,mqtt_retained);
       sprintf(buffer, "%.1f", windgustSpeed);
       mqttclient.publish(TOPIC_GUSTSPEED, buffer,mqtt_retained);
+      // report if the RS485 sensors are responding
+      if (RS485WindSpeedSensorTimeout) mqttclient.publish(TOPIC_WINDSPEEDSENSOR, "0" ,mqtt_retained);
+      else mqttclient.publish(TOPIC_WINDSPEEDSENSOR, "1" ,mqtt_retained);
+      if (RS485WindDirSensorTimeout) mqttclient.publish(TOPIC_WINDDIRSENSOR, "0" ,mqtt_retained);
+      else mqttclient.publish(TOPIC_WINDDIRSENSOR, "1" ,mqtt_retained);
     #endif
+
     #ifdef WITH_RAIN
       sprintf(buffer, "%.2f", rain1hmm);                  // convert float to string before publishing
       mqttclient.publish(TOPIC_RAIN, buffer , mqtt_retained  );
@@ -1367,3 +1389,17 @@ void MQTTpublish() {
     mqttclient.disconnect();
   }
   #endif
+
+/**************************************************************************
+ * after OTA upload
+ **************************************************************************/
+  void onOTAEnd(bool success) {
+  // Log when OTA has finished
+  if (success) {
+    Serial.println("OTA update finished successfully!");
+  } else {
+    Serial.println("There was an error during OTA update!");
+  }
+  // <Add your own code here>
+  //ESP.restart();
+}
