@@ -60,7 +60,7 @@ Updates :
 #include <ESPAsyncWebServer.h>
 #include <ElegantOTA.h>
 #include "NTP.h"                    // github.com/sstaub/NTP.git
-#include "settings_punta.h"         // config file
+#include "settings_sample.h"         // config file
 
 /********************************************************************
  _____              __ _                       _   _             
