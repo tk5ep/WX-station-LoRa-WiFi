@@ -43,7 +43,7 @@
 /***************************************************
    OLED display
 ***************************************************/
-const byte ECOMODE               = 2;             	   // screensaver 0=OFF 1=PERMANENT 2=ONLY BETWEEN TX
+const byte ECOMODE               = 0;             	   // screensaver 0=OFF 1=PERMANENT 2=ONLY BETWEEN TX
 const bool DISPLAY_CARDINAL      = false;             // display directions on OLED. true = cardinal. false = degrees
 
 /***************************************************
