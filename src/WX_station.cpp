@@ -982,7 +982,7 @@ void send2APRS_IS() {
     Serial.println(login);
     delay(1000); //as recommended, delay between login and packet sending
     APRSISString += CALLSIGN;
-    APRSISString += ">WX,TCPIP*:=";
+    APRSISString += ">APWXEP,TCPIP*:=";
     APRSISString += APRSString;
     client.println(APRSISString);
     Serial.println(APRSISString);
@@ -995,7 +995,7 @@ send LoRa data via APRS
 void send2APRS_LoRa() {
   LoRaString = "";              // clear the string
   LoRaString = CALLSIGN;
-  LoRaString += ">WX";
+  LoRaString += ">APWXEP";
   #ifdef WITH_DIGIPEATING
     LoRaString += ",WIDE1-1";
   #endif
