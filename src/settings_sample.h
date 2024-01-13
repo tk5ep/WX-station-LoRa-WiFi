@@ -50,7 +50,7 @@ const bool DISPLAY_CARDINAL      = false;             // display directions on O
    Station coordinates
 ***************************************************/
 #define CALLSIGN "NOCALL-13"                     // callsign with SSID ex TK5EP-13
-#define LATITUDE "0000.00N"                     // latitude in DDMM.MM NORTH ex : 4156.95N
+#define LATITUDE "0000.00N"                     // latitude in DDMM.MM NORTH ex : 4156.95N. You can use my map to get correct coordinates : http://egloff.eu/qralocator
 #define LONGITUDE "00000.00E"                   // longitude in DDDMM.MM EAST ex: 00845.26E
 const uint16_t ALTITUDE = 100;                   // home altitude in meters
 #define WITH_SEALEVELPRESSURE                   // if pressure on sealevel has to be used
