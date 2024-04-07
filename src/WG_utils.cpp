@@ -20,9 +20,11 @@ extern WiFiClient client;
 /**************************************************************************
  upload to Wunderground
 ***************************************************************************
+Documentation :
+https://support.weather.com/s/article/PWS-Upload-Protocol?language=en_US
+Upload :
 https://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?ID=XXXXX&PASSWORD=YYYYYYY&dateutc=now&humidity=59&action=updateraw
 
-datas format explained : https://support.weather.com/s/article/PWS-Upload-Protocol?language=en_US
 action [action=updateraw] -- always supply this parameter to indicate you are making a weather observation upload
 ID [ID as registered by wunderground.com]
 PASSWORD [Station Key registered with this PWS ID, case sensitive]

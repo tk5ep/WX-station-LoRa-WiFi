@@ -31,22 +31,16 @@ namespace MQTT_Utils {
     #ifdef WITH_MQTT
     void connect(){
         mqttclient.setServer(mqtt_broker, mqtt_port);
-        mqttclient.setKeepAlive(300);
+        //mqttclient.setKeepAlive(300);
         uint8_t retries = 5;                             // number of connection tries
         while (!mqttclient.connected()) {
             String client_id = "WX-station";
-            //client_id += String(WiFi.macAddress());
-            //Serial.printf("Client %s connects MQTT broker %s\r\n", client_id.c_str(),mqtt_broker);
             logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "MQTT", "Client %s connects MQTT broker %s", client_id.c_str(),mqtt_broker);
-            
             if (mqttclient.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-                //Serial.printf("%s brocker connected\r\n",mqtt_broker);
                 logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "MQTT", "Connection to broker %s",mqtt_broker);
             } else {
                 logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "MQTT", "Connection failed with state %s",String(mqttclient.state()));
-                //Serial.print("failed with state ");
-                //Serial.println(mqttclient.state());
-                delay(1000);
+//                delay(1000);
             }
             retries--;
 

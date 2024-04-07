@@ -5,6 +5,7 @@
 
 namespace WiFi_Utils {
     void connect();
+    void init();
     String processor(const String& var);
 }
 #endif

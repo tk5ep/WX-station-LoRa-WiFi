@@ -1,6 +1,6 @@
 /********************************************
   configuration file for WX_STATIOn by TK5EP *
-  2024-03-16
+  2024-04-01
 ********************************************/
 
 #include <Arduino.h>
@@ -13,12 +13,15 @@
 /***************************************************DEBUG_BME
   DEBUG flags comment out (remove "//") what is needed to be displayed on terminal
 ***************************************************/
+//#define DEBUG_GLOBAL
+//#define DEBUG_WIFI
 //#define DEBUG_RAIN    // debug the rain function
 //#define DEBUG_WIND    // debug the win function
 //#define DEBUG_BME     // debug the BME sensors
 //#define DEBUG_SHT     // debug the SHT31 sensor
 //#define DEBUG_TIME    // debug the time routine
 //#define DEBUG_WG      // debug the Wunderground routine
+//#define DEBUG_RS485   // debug the RS485 protocol
 //#define DEBUG_NTP     // debug the NTP routine
 //#define DEBUG_BAT     // debug the battery routine
 //#define DEBUG_I2C     // launch i2C scanner at startup
@@ -33,8 +36,9 @@ const bool DISPLAY_CARDINAL      = false;       // display directions on OLED. t
 /***************************************************
    Protocols used
 ***************************************************/
-#define WITH_APRS_LORA                          // use APRS LoRa or not
-//#define WITH_APRS_IS							         // use APRS-IS instead of APRS via LoRa
+//#define WITH_APRS_LORA                          // use APRS LoRa or not
+#define WITH_APRS_IS							         // use APRS-IS instead of APRS via LoRa
+#define WITH_APRS_FALLBACK                      // set it if you want LoRa APRS to be a fallback when APRS_IS is down
 #define WITH_WIFI                               // needed for MQTT, WUNDERGROUND, APRS-IS and WEBPAGE
 //#define WITH_WUNDERGROUND                       // send WX repots to Wunderground
 //#define WITH_MQTT								         // use MQTT broker or not
@@ -70,6 +74,18 @@ const uint16_t ALTITUDE               = 0;      // home altitude in meters
 #define WITH_SEALEVELPRESSURE                    // if pressure reporterd at sealevel is wanted
 
 /***************************************************
+   WIFI
+***************************************************/
+#define wifi_ssid              "WIFI_SSID"        // Change this to your WiFi SSID
+#define wifi_password          "WIFI_PASSWORD"    // Change this to your WiFi password
+//#define WITH_STATIC_IP           			  		  // if static address wanted
+const IPAddress local_IP(44, 168, 80, 141);		  // Set your Static IP address like xxx,xxx,xxx,xxx
+const IPAddress gateway(44, 168, 80, 129);		  // Set your Gateway IP address
+const IPAddress subnet(255, 255, 255, 240);       // Set your subnet mask
+const IPAddress primaryDNS(44, 168, 80, 129);     // optional, put 8.8.8.8 if you don't know
+//IPAddress secondaryDNS(8, 8, 4, 4); 		  	     // optional
+
+/***************************************************
    APRS LoRa
 ***************************************************/
 const float TXFREQUENCY                = 433.775;  // TX frequency in MHz
@@ -84,18 +100,6 @@ const int   TXPOWER                    = 20;       // power in dBm. 20 max for b
 #define APRS_IS_PASSWD   "11111"				        // APRS IS password, get it at https://apps.magicbug.co.uk/passcode/
 #define APRS_IS_SERVER   "rotate.aprs.net"        // APRS server address, ie rotate.aprs.net
 const int APRS_IS_SERVER_PORT = 14580;			     // APRS server port, default 14580
-
-/***************************************************
-   WIFI
-***************************************************/
-#define wifi_ssid              "WIFI_SSID"        // Change this to your WiFi SSID
-#define wifi_password          "WIFI_PASSWORD"    // Change this to your WiFi password
-//#define WITH_STATIC_IP           			  		  // if static address wanted
-const IPAddress local_IP(44, 168, 80, 141);		  // Set your Static IP address like xxx,xxx,xxx,xxx
-const IPAddress gateway(44, 168, 80, 129);		  // Set your Gateway IP address
-const IPAddress subnet(255, 255, 255, 240);       // Set your subnet mask
-const IPAddress primaryDNS(44, 168, 80, 129);     // optional, put 8.8.8.8 if you don't know
-//IPAddress secondaryDNS(8, 8, 4, 4); 		  	     // optional
 
 /***************************************************
    WUNDERGROUND

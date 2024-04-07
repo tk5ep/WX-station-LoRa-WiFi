@@ -1,5 +1,5 @@
 /***************************************************
-* WX station using APRS LoRa protocol
+* WX station using APRS LoRa protocol, main program
 * build for Lilygo boards
 * 
 Hardware :
@@ -21,6 +21,7 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
+040424 Adding APRS Lora fallback in case of WiFi or Internet failure. Small bug correction in WiFi_Utils.
 150324 Using vector method for the average wind direction, using math.h.
 290224 Using tickertwo library instead of millis() in main loop, more precise timing.
 280224 RS485 address change routine rework, and small bug corrections. Added OldSensorAddress parameter in settings.h
@@ -90,7 +91,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 
-String SOFTWARE_DATE = "2024.03.15";
+String SOFTWARE_DATE = "2024.04.04";
 
 // ############ define counters ################
 byte seconds;                       // When it hits 60, increase the current minute
@@ -103,6 +104,8 @@ String upTime;
 bool FIRSTLOOP = true;             // to check if it is the first loop
 uint64_t microSecondsSinceBoot;
 String Reset_Reason;                // String to hold the last RESET reason
+int screenBrightness             = 255;
+String LATITUDE, LONGITUDE;
 
 // ############### LoRa ##################
 String LoRaString   = "";
@@ -113,20 +116,18 @@ String APRSISString = "";
 float tempC, tempF, humi, press, batteryVoltage;
 
 // ############ rain sensor ##########
-//#ifdef WITH_RAIN
     volatile float rain1h[60];                                            //60 floating numbers to keep track of 60 minutes of rain
     float rain1hmm = 0;                                                   // rain during last 1 hour
     volatile float rain24hmm = 0;                                         //
     volatile unsigned int rainCount = 0, oldrainCount = 0;  // used in rain counter
-//#endif  // end if WITH_RAIN
+
 
 // ############# wind sensors ########## 
-//#ifdef WITH_WIND
   HardwareSerial rs485Serial(1);            // declare UART0
   bool RS485WindSpeedSensorTimeout = false; // flag to check if the wind sensor is answering
   bool RS485WindDirSensorTimeout   = false; // flag to check if the wind sensor is answering
   int currentDir                   = 0;     // instant wind direction ModBus value in 8 direction values 
-  int winDirAvg_2min                = 0;     // 2 minute average wind direction in degrees 0-360
+  int winDirAvg_2min               = 0;     // 2 minute average wind direction in degrees 0-360
   float currentSpeedms             = 0;     // instant wind speed ModBus value in m/s
   float currentSpeedKmh            = 0;     // instant wind speed ModBus value in km/h
   float windSpeed_avg2m            = 0;     // 2 minute average wind speed in km/h calculate from above array
@@ -134,19 +135,14 @@ float tempC, tempF, humi, press, batteryVoltage;
   int windgustDir                  = 0;     // wind gust dir max value
   float windgust_10m[10];                   // array of 10 floats to keep track of 10 minute max gust in m/s
   int windgustDir_10m[10];                  // array of 10 float values to keep track of the wind gust direction
-//#endif
-
-String LATITUDE, LONGITUDE;
 
 #ifdef WITH_WIFI
-  // Create AsyncWebServer object on port 80
-  AsyncWebServer server(80);
-  // NTP
-  WiFiUDP wifiUdp;
-  NTP ntp(wifiUdp);
+    // Create AsyncWebServer object on port 80
+    AsyncWebServer server(80);
+    WiFiUDP wifiUdp;
+    NTP ntp(wifiUdp);
 #endif
 
-int       screenBrightness    = 255;
 logging::Logger               logger;
 
 void mainloop();
@@ -220,33 +216,17 @@ void setup() {
         SHT31_Utils::init();
     #endif
 
-
     #ifdef WITH_APRS_LORA    
         // Start LoRa module
         APRS_Utils::LORAsetup();
     #endif
     
     #ifdef WITH_WIFI
-        WiFi_Utils::connect();    // connect to WiFi AP
-        // NTP
-        ntp.ruleDST(DSTzone, DSTweek, DSTwday, DSTmonth, DSTwday, DSToffset); 
-        ntp.ruleSTD(STDzone, STDweek, STDwday, STDmonth, STDwday, STDoffset); 
-        ntp.begin();
-        // OTA
-        ElegantOTA.begin(&server, OTA_username, OTA_password);
-        // WEBSERVER
-        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-          request->send_P(200, "text/html", index_html, WiFi_Utils::processor);
-        });
-
-        // display free heap memory
-        server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(200, "text/plain", "Free heap : " + String(ESP.getFreeHeap()));
-        });
-
-        server.begin();
+        WiFi_Utils::connect();
+        WiFi_Utils::init();
     #endif
 
+    // start ticker 1 second timer
     timer1.start();
 } // END SETUP
 
@@ -334,20 +314,17 @@ void mainloop() {
       #endif
 
       // prepare the APRS packet
-      APRSString = APRS_Utils::build_APRSbeacon();
-      // if APRS LoRa is activated send it
-      #ifdef WITH_APRS_LORA
-        APRS_Utils::send2APRS_LoRa(APRSString);
-        // if it is at boot, send also a STATUS frame to clean old infos
-        if (FIRSTLOOP) {
-          APRS_Utils::send2APRS_LoRa("WX station by TK5EP v. " + SOFTWARE_DATE,true);
-          // clear the flag, we're not anymore in first loop
-          FIRSTLOOP = false;                                      
-        }
+      // DEBUG
+      #ifdef DEBUG_GLOBAL
+        logger.log( logging::LoggerLevel::LOGGER_LEVEL_INFO, "GLOBAL_DEBUG","APRS build beacon");
       #endif
+      APRSString = APRS_Utils::build_APRSbeacon();
 
       // if WiFi has been activated, push datas in WiFI dependent protocols
       #ifdef WITH_WIFI
+        #ifdef DEBUG_WIFI
+            logger.log( logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi","WiFi status : %s",String(WiFi.status()) );
+        #endif
         // if not connected, reconnect to WiFi
         if (WiFi.status() != 3) WiFi_Utils::connect();
         // if connected to WiFi
@@ -359,28 +336,61 @@ void mainloop() {
           #endif
           // if APRS-IS is wanted, send out packet
           #ifdef WITH_APRS_IS
-            APRS_Utils::send2APRS_IS(APRSString);
-            // if FIRSTLOOP senad also STATUS packet to cleanup old one
-            if (FIRSTLOOP) {
-              APRS_Utils::send2APRS_IS("WX station by TK5EP v. "+ SOFTWARE_DATE,true);
-              FIRSTLOOP = false;
+            // if connection to APRS-IS server doesn't work, use APRS LoRa fallback.
+            if (APRS_Utils::send2APRS_IS(APRSString) == false) {
+                #ifdef WITH_APRS_FALLBACK
+                  logger.log( logging::LoggerLevel::LOGGER_LEVEL_INFO, "GLOBAL_DEBUG","APRS-IS failure, APRS LoRa fallback");
+                  APRS_Utils::LORAsetup();
+                  APRS_Utils::send2APRS_LoRa(APRSString);
+                  //FIRSTLOOP = false;
+                #endif
+            }
+            else {
+                // if FIRSTLOOP, send also STATUS packet to cleanup old one
+                if (FIRSTLOOP) {
+                  APRS_Utils::send2APRS_IS("WX station by TK5EP v. "+ SOFTWARE_DATE,true);
+                  FIRSTLOOP = false;
+                }
             }
           #endif
+
           // if WUNDERGROUND is wanted, push datas
           #ifdef WITH_WUNDERGROUND
             WG_Utils::send();
           #endif
+
           // if MQTT protocol declared, transmit to MQTT broker
           #ifdef WITH_MQTT
             MQTT_Utils::publish();
           #endif
         }
+        else {
+          // if WiFi link broken and LoRa fallback set, then send via APRS LoRa
+          WiFi.disconnect();
+          #ifdef WITH_APRS_FALLBACK
+            logger.log( logging::LoggerLevel::LOGGER_LEVEL_INFO, "GLOBAL_DEBUG","APRS LoRa fallback");
+            APRS_Utils::LORAsetup();
+            APRS_Utils::send2APRS_LoRa(APRSString);
+            FIRSTLOOP = false;
+          #endif
+        }
+      #endif
+
+            // if APRS LoRa is activated send it
+      #if defined WITH_APRS_LORA
+          APRS_Utils::send2APRS_LoRa(APRSString);
+          // if it is at boot, send also a STATUS frame to clean old infos
+          if (FIRSTLOOP) {
+            APRS_Utils::send2APRS_LoRa("WX station by TK5EP v. " + SOFTWARE_DATE,true);
+            // clear the flag, we're not anymore in first loop
+            FIRSTLOOP = false;                                      
+          }
       #endif
 
       // if ECOMODE is set to permanent than display OFF to save battery
       if (ECOMODE != 0 && !FIRSTLOOP)
         {
-          display_toggle(false);
+            display_toggle(false);
         }
 
     }  // END if TXperiod or first loop
@@ -428,18 +438,18 @@ void mainloop() {
 
     // every 10 seconds 
     if (seconds % 10 == 0) {
-      uint64_t microSecondsSinceBoot = esp_timer_get_time();  
-      upTime = Utils::delayToString(microSecondsSinceBoot / 1000);
+          uint64_t microSecondsSinceBoot = esp_timer_get_time();  
+          upTime = Utils::delayToString(microSecondsSinceBoot / 1000);
     } // END every 10s
 
     //counts every 2 min
     if (++seconds_2m > 119) {
-      seconds_2m = 0;
+          seconds_2m = 0;
     }
     
     #ifdef DEBUG_TIME
-        logger.log(logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "TIME", "millis,sec/2min/min/10min/TX");
-        logger.log(logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "TIME", "%d,%d/%d/%d/%d/%d",millis(),seconds,seconds_2m,minutes,minutes_10m,TXcounter);
+          logger.log(logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "TIME", "millis,sec/2min/min/10min/TX");
+          logger.log(logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "TIME", "%d,%d/%d/%d/%d/%d",millis(),seconds,seconds_2m,minutes,minutes_10m,TXcounter);
     #endif
   }
 
@@ -456,6 +466,6 @@ void mainloop() {
 void loop() {
   // check OTA state
   ElegantOTA.loop();
-  // call main loop with ticker (1s rate)
+  // call main loop through ticker (1s rate)
   timer1.update();
 }  // end loop() 

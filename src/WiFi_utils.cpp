@@ -13,7 +13,6 @@
 
 extern logging::Logger  logger;
 extern NTP ntp;
-//extern String SOFTWARE_VERSION;
 extern String SOFTWARE_DATE;
 extern String Reset_Reason;
 extern float press;
@@ -27,58 +26,10 @@ extern int windgustDir;
 extern float windgustSpeed;
 extern String upTime;
 extern float batteryVoltage;
-//extern bool WITH_STATIC_IP;
-
-//WiFiClient client;
+extern AsyncWebServer server;
 
 namespace WiFi_Utils {
-/**********************************
-connect to WiFi
-***********************************/
-void connect() {
- // init WiFi if needed
-//#if defined WITH_APRS_IS || defined WITH_MQTT || defined WITH_WUNDERGROUND
-//#ifdef WITH_WIFI
-  logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "WiFi trying to connect");
-  show_display("WiFi", "", "Trying to connect..");
-  
-  // is we use a static IP, not DHCP
-  #ifdef WITH_STATIC_IP 
-      if (WiFi.config(local_IP, gateway, subnet, primaryDNS))
-        { logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "STA configured"); }
-      else 
-        { logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "STA config failed"); } 
-  #endif
-
-  // Connect to WPA/WPA2 network.
-  WiFi.begin(wifi_ssid, wifi_password);
-  // try 20 WiFi connections
-  int numberOfTries = 20;                 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    if (numberOfTries <= 0) {
-      break; 
-      }
-    else { numberOfTries--; }
-  }
-  // if connection succeeded
-  if (WiFi.status() == WL_CONNECTED) {
-    char buffer[24];
-    sprintf(buffer,"IP : %u.%u.%u.%u", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-    logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "Connected to %s with RSSI %s dBm", buffer,String(WiFi.RSSI()));
-    show_display("WiFi","", "Wifi connected to :",wifi_ssid,buffer,"RSSI : " + String(WiFi.RSSI()) + "dBm",4000);
-  } else {
-    logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "WiFi", "", "Connection failed");
-    WiFi.disconnect();
-
-    if (WiFi.status() == WL_NO_SSID_AVAIL) {
-      logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "WiFi", "SSID not found");
-      show_display("WiFi","", "Failed","SSID not found",4000);
-    }
-  }
-  }
-
-  /******************************************
+   /******************************************
   * processor for the Web page 
   *******************************************/
   String processor(const String& var){
@@ -152,5 +103,70 @@ void connect() {
   #endif
   return String();
 }
+
+/**********************************
+connect to WiFi
+***********************************/
+void connect() {
+      // init WiFi if needed
+      logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "WiFi trying to connect");
+      show_display("WiFi", "", "Trying to connect..");
+      
+      // is we use a static IP, not DHCP
+      #ifdef WITH_STATIC_IP 
+          if (WiFi.config(local_IP, gateway, subnet, primaryDNS))
+            { logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "STA configured"); }
+          else 
+            { logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "STA config failed"); } 
+      #endif
+
+      // Connect to WPA/WPA2 network.
+      WiFi.begin(wifi_ssid, wifi_password);
+      // try 20 WiFi connections
+      int numberOfTries = 20;                 
+      while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        if (numberOfTries <= 0) {
+          break; 
+          }
+        else { numberOfTries--; }
+      }
+      // if connection succeeded
+      if (WiFi.status() == WL_CONNECTED) {
+        char buffer[24];
+        sprintf(buffer,"IP : %u.%u.%u.%u", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
+        logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WiFi", "Connected to %s with RSSI %s dBm", buffer,String(WiFi.RSSI()));
+        show_display("WiFi","", "Wifi connected to :",wifi_ssid,buffer,"RSSI : " + String(WiFi.RSSI()) + "dBm",4000);
+      } else {
+        logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "WiFi", "Connection failed");
+        WiFi.disconnect();
+
+        if (WiFi.status() == WL_NO_SSID_AVAIL) {
+          logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "WiFi", "SSID not found");
+          show_display("WiFi","", "Failed","SSID not found",4000);
+        }
+      }
+  }
+
+/**********************************
+init the servers
+***********************************/
+void init() {
+            // NTP
+            ntp.ruleDST(DSTzone, DSTweek, DSTwday, DSTmonth, DSTwday, DSToffset); 
+            ntp.ruleSTD(STDzone, STDweek, STDwday, STDmonth, STDwday, STDoffset); 
+            ntp.begin();
+            // OTA
+            ElegantOTA.begin(&server, OTA_username, OTA_password);
+            // WEBSERVER
+            server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+            request->send_P(200, "text/html", index_html, processor);
+            });
+            // display free heap memory
+            server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+            request->send(200, "text/plain", "Free heap : " + String(ESP.getFreeHeap()));
+            });
+            server.begin();
+  }
 
 } // end spacename

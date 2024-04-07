@@ -185,8 +185,9 @@ namespace APRS_Utils {
 
   /**************************************************************************
    send all datas to the APRS-IS network
+   returns false if link to APRS-IS server doesn't work
   **************************************************************************/
-  void send2APRS_IS(String datas, bool status) {
+  bool send2APRS_IS(String datas, bool status) {
     //String APRSString = datas;  
     //char login[60];
 
@@ -203,7 +204,7 @@ namespace APRS_Utils {
     if (!client.connected()) {
       logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "APRS-IS", "Connection failed");
       client.stop();
-      return;
+      return false;
     }
     else
     {
@@ -220,6 +221,7 @@ namespace APRS_Utils {
       client.println(APRSISString); // send the datas to APRS-IS
       show_display("TX APRS-IS", "", APRSISString);
       logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "APRS_IS", "Sending : %s",APRSISString.c_str());
+      return true;
     }
   }
 
