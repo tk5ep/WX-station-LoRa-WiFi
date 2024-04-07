@@ -1,5 +1,6 @@
 # WX-station-LoRa-WiFi
-⚠️ Latest software version 2024-03-15
+⚠️ Latest software version 2024-04-04
+(Added APRS LoRa fallback)
 
 An APRS LoRa weather station with a TTGO T3 module.
 
