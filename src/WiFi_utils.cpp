@@ -153,9 +153,14 @@ init the servers
 ***********************************/
 void init() {
             // NTP
-            ntp.ruleDST(DSTzone, DSTweek, DSTwday, DSTmonth, DSTwday, DSToffset); 
-            ntp.ruleSTD(STDzone, STDweek, STDwday, STDmonth, STDwday, STDoffset); 
+            ntp.ruleDST(DSTzone, DSTweek, DSTwday, DSTmonth, DSThour, DSToffset); 
+            ntp.ruleSTD(STDzone, STDweek, STDwday, STDmonth, STDhour, STDoffset); 
             ntp.begin();
+            #ifdef DEBUG_NTP
+                logger.log( logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "NTP", "STD time : %s", ntp.ruleSTD() );
+                logger.log( logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "NTP", "DST time : %s", ntp.ruleDST() );
+                logger.log( logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "NTP", "is DST : %s", String (ntp.isDST()) );
+            #endif
             // OTA
             ElegantOTA.begin(&server, OTA_username, OTA_password);
             // WEBSERVER

@@ -21,6 +21,7 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
+080424 Bug correction in NTP daylight saving time.
 040424 Adding APRS Lora fallback in case of WiFi or Internet failure. Small bug correction in WiFi_Utils.
 150324 Using vector method for the average wind direction, using math.h.
 290224 Using tickertwo library instead of millis() in main loop, more precise timing.
@@ -91,7 +92,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 
-String SOFTWARE_DATE = "2024.04.04";
+String SOFTWARE_DATE = "2024.04.08";
 
 // ############ define counters ################
 byte seconds;                       // When it hits 60, increase the current minute

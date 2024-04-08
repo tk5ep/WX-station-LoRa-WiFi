@@ -1,6 +1,6 @@
 /********************************************
   configuration file for WX_STATIOn by TK5EP *
-  2024-04-01
+  2024-04-08
 ********************************************/
 
 #include <Arduino.h>
@@ -68,10 +68,10 @@ const float OnBoardDividerCorrection   = 0.38;  // Difference in Volts to correc
    Station coordinates
 ***************************************************/
 const String CALLSIGN                 = "NOCALL-13"; // callsign with SSID ex TK5EP-13
-const float latitude                  = 0.0000; // latitude in DD.MMMM
-const float longitude                 = 0.0000; // longitude in DD.MMMM
+const float latitude                  = 0.0000; // latitude in DD.MMMM like 41.94917
+const float longitude                 = 0.0000; // longitude in DD.MMMM like 8.75430
 const uint16_t ALTITUDE               = 0;      // home altitude in meters
-#define WITH_SEALEVELPRESSURE                    // if pressure reporterd at sealevel is wanted
+#define WITH_SEALEVELPRESSURE                    // if pressure reported to sealevel is wanted
 
 /***************************************************
    WIFI
@@ -90,6 +90,7 @@ const IPAddress primaryDNS(44, 168, 80, 129);     // optional, put 8.8.8.8 if yo
 ***************************************************/
 const float TXFREQUENCY                = 433.775;  // TX frequency in MHz
 const int   TXPERIOD                   = 300;      // TX period in seconds
+const int   MQTTPERIOD                 = 15;       // MQTT period in seconds
 const int   TXPOWER                    = 20;       // power in dBm. 20 max for boards with SX1278 and 22 for SX1268
 #define     COMMENT                    ""          // short info in beacon. Leave blank if not wanted
 #define     WITH_DIGIPEATING                       // if we want the APRS frames to be repeated (adds WIDE1-1)
@@ -144,19 +145,19 @@ const byte mqtt_retained      = 0;                  // should the datas be retai
 #define      DSTzone       "CEST"
 const int8_t DSTweek       = 0; //Last, First, Second, Third, Fourth (0 - 4)
 const int8_t DSTwday       = 0; // Sun, Mon, Tue, Wed, Thu, Fri, Sat (0 - 7)
-const int8_t DSTmonth      = 3;
-const int8_t DSTday        = 2;
+const int8_t DSTmonth      = 2; //Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec (0 -11)
+const int8_t DSThour        = 2; 
 const int8_t DSToffset     = 120;
 // last sunday in october 3:00, timezone +60min (+1 GMT)
 #define      STDzone       "CET"
 const int8_t STDweek       = 0; //Last, First, Second, Third, Fourth (0 - 4)
 const int8_t STDwday       = 0; // Sun, Mon, Tue, Wed, Thu, Fri, Sat (0 - 7)
 const int8_t STDmonth      = 10;
-const int8_t STDday        = 3;
+const int8_t STDhour        = 3;
 const int8_t STDoffset     = 60;
 
-// You normally do not need to modify the lines below !
-// DO IT ONLY if you knwo what you're doing !
+// You normally DO NOT need to modify the lines below !
+// DO IT ONLY if you know what you're doing !
 
 /***************************************************
    Define pins
