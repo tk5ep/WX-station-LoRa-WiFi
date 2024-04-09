@@ -1,5 +1,5 @@
 /********************************************
-  configuration file for WX_STATIOn by TK5EP *
+  configuration file for WX_STATION by TK5EP *
   2024-04-08
 ********************************************/
 
