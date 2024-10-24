@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <logger.h>
 #include <Wire.h>
+#include <math.h>
 #include "display.h"
 #include <math.h>
 #include "settings.h"
@@ -44,21 +45,22 @@ volatile unsigned long rainlast;
 
 namespace Utils {
 /***********************************************
- convert time in ms to day hour min sec
+ convert time from microsec to day hour min sec
 ***********************************************/
-String delayToString(unsigned long time_ms) {
-	char buf[64];
+String delayToString(int64_t time_us) {
+	char buf[32];
 	String s;
-    int seconds = time_ms / 1000;
-    int minutes = seconds / 60;
+
+    int64_t seconds = time_us / 1000000;
+    int64_t minutes = seconds / 60;
     int hours = minutes / 60;
     int days = hours / 24;
  
-    seconds %= 60;
-    minutes %= 60;
-    hours %= 24;
+    int sec = seconds % 60;
+    int min = minutes % 60;
+    hours   %= 24;
 
-    sprintf_P(buf, PSTR("%03dd:%02dh:%02dm:%02ds"),days,hours,minutes,seconds );
+    sprintf_P(buf, PSTR("%03dd:%02dh:%02dm:%02ds"),days,hours,min,sec );
     s = buf;
 	return s;
 }

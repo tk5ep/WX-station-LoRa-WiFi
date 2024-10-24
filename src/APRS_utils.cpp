@@ -55,43 +55,29 @@ namespace APRS_Utils {
         while (true);
       }
       #endif
-      /*
-      //radio.setDio1Action(setFlag);
-      // set carrier frequency
-      if (radio.setFrequency(TXFREQUENCY) == RADIOLIB_ERR_INVALID_FREQUENCY) {
-        Serial.println(F("Selected frequency is invalid for this module!"));
-        while (true);
-      }
-      */
-      // set bandwidth to 250 kHz
+      // set bandwidth
       if (radio.setBandwidth(125.0) == RADIOLIB_ERR_INVALID_BANDWIDTH) {
-        //Serial.println(F("Selected bandwidth is invalid for this module!"));
         logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "SX12XX", "Selected bandwidth is invalid for this module!");
         while (true);
       }
-
-      // set spreading factor to 12
+      // set spreading factor
       if (radio.setSpreadingFactor(12) == RADIOLIB_ERR_INVALID_SPREADING_FACTOR) {
-        //Serial.println(F("Selected spreading factor is invalid for this module!"));
         logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "SX12XX", "Selected spreading factor is invalid for this module!");
         while (true);
       }
-
-      // set coding rate to 6
+      // set coding rate
       if (radio.setCodingRate(5) == RADIOLIB_ERR_INVALID_CODING_RATE) {
-        //Serial.println(F("Selected coding rate is invalid for this module!"));
         logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "SX12XX", "Selected coding rate is invalid for this module!");
         while (true);
       }
-
+      // set output power
       if (radio.setOutputPower(TXPOWER) == RADIOLIB_ERR_INVALID_OUTPUT_POWER) {
-        //Serial.println(F("Selected output power is invalid for this module!"));
         logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "SX12XX", "Selected output power is invalid for this module!");
         show_display("TX APRS", "", "Wrong power setting!");
         while (true);
       }
+      // set current limit
       if (radio.setCurrentLimit(140) == RADIOLIB_ERR_INVALID_CURRENT_LIMIT) {
-        //Serial.println(F("Selected current limit is invalid for this module!"));
         logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "SX12XX", "Selected current limit is invalid for this module!");
         while (true);
       }
@@ -142,12 +128,23 @@ namespace APRS_Utils {
         float tempF = (tempC * 1.8) + 32;  // conversion Celsius to Fahrenheit
 
         #if defined(WITH_BME280) || defined(WITH_BME680)
-        sprintf(buffer, "t%03dh%02db%05d",
-                          int(tempF),
-                          int(round(humi)),
-                          int(round(press*10))
-                          );
+            // if humidity = 100%, transmit h00 as requested by APRS protocol
+            if (humi == 100) {
+              sprintf(buffer, "t%03dh00b%05d",
+                              int(tempF),
+                              int(round(press*10))
+                              );
+            }
+            // otherwise send measured values
+            else {
+            sprintf(buffer, "t%03dh%02db%05d",
+                              int(tempF),
+                              int(round(humi)),
+                              int(round(press*10))
+                              );
+            }
         #endif
+
         // BMP280 has no humidity sensor, so set to
         #if defined(WITH_BMP280)
               sprintf(buffer, "t%03dh..b%05d",
@@ -155,13 +152,21 @@ namespace APRS_Utils {
                     int(round(press*10))
                     );
         #endif
+
         // SHT31 has no pressure sensor, so set to
         #if defined(WITH_SHT31)
-        sprintf(buffer, "t%03dh%02db.....",
-                          int(tempF),
-                          int(round(humi))
-                          );
+            // if humidity = 100%, transmit h00 as requested by APRS protocol
+            if (humi == 100)  {
+                    sprintf(buffer, "t%03dh00b....",int(tempF))              
+            }
+            else {
+                    sprintf(buffer,"t%03h%02db....",
+                    int(tempF),
+                    int(round(humi))
+                    );
+            }
         #endif
+
         APRSString += buffer;                                   // push into beacon frame
 
       // rain datas formatting

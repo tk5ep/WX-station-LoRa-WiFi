@@ -5,7 +5,7 @@
 #include "display.h"
 
 namespace Utils {
-    String delayToString(unsigned long time_ms);
+    String delayToString(int64_t time_us);
     void PrintOLED();
     void CalcWind();
     void CalcRain();
