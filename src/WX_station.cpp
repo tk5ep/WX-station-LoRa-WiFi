@@ -21,6 +21,8 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
+181024 Correction in APRS string, humidity 100% was uncorrectly transmited (APRS_utils.cpp) (tnx F4FEB)
+170824 Corrections to avoid uptime overflow after about 46 days (Utils::DelayToString)
 080424 Bug correction in NTP daylight saving time.
 040424 Adding APRS Lora fallback in case of WiFi or Internet failure. Small bug correction in WiFi_Utils.
 150324 Using vector method for the average wind direction, using math.h.
@@ -92,7 +94,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 
-String SOFTWARE_DATE = "2024.04.08";
+String SOFTWARE_DATE = "2024.10.18";
 
 // ############ define counters ################
 byte seconds;                       // When it hits 60, increase the current minute
@@ -439,8 +441,8 @@ void mainloop() {
 
     // every 10 seconds 
     if (seconds % 10 == 0) {
-          uint64_t microSecondsSinceBoot = esp_timer_get_time();  
-          upTime = Utils::delayToString(microSecondsSinceBoot / 1000);
+          int64_t microSecondsSinceBoot = esp_timer_get_time();
+          upTime = Utils::delayToString(microSecondsSinceBoot);
     } // END every 10s
 
     //counts every 2 min
