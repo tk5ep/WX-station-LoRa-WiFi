@@ -165,7 +165,7 @@ void init() {
             ElegantOTA.begin(&server, OTA_username, OTA_password);
             // WEBSERVER
             server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-            request->send_P(200, "text/html", index_html, processor);
+            request->send(200, "text/html", index_html, processor);
             });
             // display free heap memory
             server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
