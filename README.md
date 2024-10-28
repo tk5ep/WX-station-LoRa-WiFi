@@ -1,5 +1,5 @@
 # WX-station-LoRa-WiFi
-⚠️ Latest software versions
+⚠️ Latest software versions :<br/>
 2024-10-18 Some small corrections, new librairies
 2024-08-17 Corrections to avoid uptime overflow after about 46 days (Utils::DelayToString)
 2024-04-08 Added APRS LoRa fallback & NTP DST bug correction
