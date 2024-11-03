@@ -146,14 +146,14 @@ const byte mqtt_retained      = 0;                  // should the datas be retai
 const int8_t DSTweek       = 0; //Last, First, Second, Third, Fourth (0 - 4)
 const int8_t DSTwday       = 0; // Sun, Mon, Tue, Wed, Thu, Fri, Sat (0 - 7)
 const int8_t DSTmonth      = 2; //Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec (0 -11)
-const int8_t DSThour        = 2; 
+const int8_t DSThour       = 2; 
 const int8_t DSToffset     = 120;
 // last sunday in october 3:00, timezone +60min (+1 GMT)
 #define      STDzone       "CET"
 const int8_t STDweek       = 0; //Last, First, Second, Third, Fourth (0 - 4)
 const int8_t STDwday       = 0; // Sun, Mon, Tue, Wed, Thu, Fri, Sat (0 - 7)
-const int8_t STDmonth      = 10;
-const int8_t STDhour        = 3;
+const int8_t STDmonth      = 9;
+const int8_t STDhour       = 3;
 const int8_t STDoffset     = 60;
 
 // You normally DO NOT need to modify the lines below !
