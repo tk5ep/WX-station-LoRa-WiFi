@@ -21,7 +21,8 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
-181024 Correction in APRS string, humidity 100% was uncorrectly transmited (APRS_utils.cpp) (tnx F4FEB)
+071224 Correction of some small bugs introduced in previous version
+181024 Correction in APRS string, humidity 100% was uncorrectly transmitted : (APRS_utils.cpp) (tnx F4FEB), Wifi_utils.cpp : replaced deprecated SEND_P, new Webserver libraries.
 170824 Corrections to avoid uptime overflow after about 46 days (Utils::DelayToString)
 080424 Bug correction in NTP daylight saving time.
 040424 Adding APRS Lora fallback in case of WiFi or Internet failure. Small bug correction in WiFi_Utils.
@@ -94,7 +95,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 
-String SOFTWARE_DATE = "2024.10.18";
+String SOFTWARE_DATE = "2024.12.07";
 
 // ############ define counters ################
 byte seconds;                       // When it hits 60, increase the current minute
