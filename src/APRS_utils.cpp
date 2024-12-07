@@ -129,7 +129,7 @@ namespace APRS_Utils {
 
         #if defined(WITH_BME280) || defined(WITH_BME680)
             // if humidity = 100%, transmit h00 as requested by APRS protocol
-            if (humi == 100) {
+            if ( round(humi) == 100 ) {
               sprintf(buffer, "t%03dh00b%05d",
                               int(tempF),
                               int(round(press*10))
@@ -155,12 +155,14 @@ namespace APRS_Utils {
 
         // SHT31 has no pressure sensor, so set to
         #if defined(WITH_SHT31)
-            // if humidity = 100%, transmit h00 as requested by APRS protocol
-            if (humi == 100)  {
-                    sprintf(buffer, "t%03dh00b....",int(tempF))              
+            // if humidity == 100%, transmit h00 as requested by APRS protocol
+            if ( round(humi) == 100 ) {
+                    sprintf(buffer, "t%03dh00b....",
+                    int(tempF)
+                    );    
             }
             else {
-                    sprintf(buffer,"t%03h%02db....",
+                    sprintf(buffer,"t%03dh%02db....",
                     int(tempF),
                     int(round(humi))
                     );
