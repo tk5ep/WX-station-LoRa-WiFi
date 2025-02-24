@@ -1,6 +1,6 @@
 /********************************************
-  configuration file for WX_STATIOn by TK5EP *
-  2024-04-08
+  configuration file for LoRa_WX-TTGO_TK5EP *
+  2024-12-18
 ********************************************/
 
 #include <Arduino.h>
@@ -21,8 +21,8 @@
 //#define DEBUG_SHT     // debug the SHT31 sensor
 //#define DEBUG_TIME    // debug the time routine
 //#define DEBUG_WG      // debug the Wunderground routine
-//#define DEBUG_RS485   // debug the RS485 protocol
-//#define DEBUG_NTP     // debug the NTP routine
+//#define DEBUG_I2C     // launch i2C scanner at startup
+//#define DEBUG_NTP		// debug the NTP routine
 //#define DEBUG_BAT     // debug the battery routine
 //#define DEBUG_I2C     // launch i2C scanner at startup
 
@@ -32,109 +32,110 @@
 //#define HAS_SH110X                              // remove "//"" if using a SH110X OLED display instead of SSD1306
 const byte ECOMODE               = 0;           // screensaver 0=OFF 1=PERMANENT 2=ONLY BETWEEN TX
 const bool DISPLAY_CARDINAL      = false;       // display directions on OLED. true = cardinal. false = degrees
+const byte MEASURE_PERIOD        = 5;           // in seconds, temp/humidity sensor measurement rate (added 2024-12-18)
 
 /***************************************************
    Protocols used
 ***************************************************/
 //#define WITH_APRS_LORA                          // use APRS LoRa or not
-#define WITH_APRS_IS							         // use APRS-IS instead of APRS via LoRa
-#define WITH_APRS_FALLBACK                      // set it if you want LoRa APRS to be a fallback when APRS_IS is down
-#define WITH_WIFI                               // needed for MQTT, WUNDERGROUND, APRS-IS and WEBPAGE
-//#define WITH_WUNDERGROUND                       // send WX repots to Wunderground
-//#define WITH_MQTT								         // use MQTT broker or not
-//#define SEND_BAT_INFO                           // send battery voltage in APRS packets
+#define WITH_APRS_IS						     // use APRS-IS instead of APRS via LoRa
+const bool WITH_APRS_FALLBACK = false;           // set it if you want LoRa APRS to be a fallback when APRS_IS is down
+#define WITH_WIFI                                // needed for MQTT, WUNDERGROUND, APRS-IS and WEBPAGE
+#define WITH_WUNDERGROUND                        // send WX reports to Wunderground
+#define WITH_MQTT								 / use MQTT broker or not
+#define SEND_BAT_INFO                           // send battery voltage in APRS packets
 
 /***************************************************
    Sensors
 ***************************************************/
-#define WITH_BME280
+//#define WITH_BME280
 //#define WITH_BMP280
 //#define WITH_BME680
-//#define WITH_SHT31
+#define WITH_SHT31
 //#define WITH_RAIN                               // comment if NO rain sensor
-//#define WITH_WIND	
+#define WITH_WIND	                              // same for wind sensors
 const float rainBucketCont             = 0.28;  // rain sensor bucket containance in mm of water, depends on model
-const int RAINDEBOUNCE                 = 100;   // in ms debounce time for the rain sensor
+const int RAINDEBOUNCE                 = 250;   // in ms debounce time for the rain sensor
 // sensor addresses
 const uint8_t SHT31_I2C                = 0x44;  // SHT31 i2c address either 0x44 or 0x45
-const uint8_t BME_I2C                  = 0x76;  // BME280 i2c address either 0x76 or 0x77
+const uint8_t BME_I2C                  = 0x76;  // BOSCH i2c address either 0x76 or 0x77
 const uint8_t OldSensorAddress         = 0x01;  // old sensor address you want to change. Probably default one : 0x01
-const uint8_t NewSensorAddress         = 0x02;  // new sensor address in case of need to change it. Certainly one of two addresses below. Be sure to have only one sensor on ModBus. 
+const uint8_t NewSensorAddress         = 0x02;  // put here the new sensor address in case of needed change. Certainly one of two addresses below. Be sure to have only one sensor on ModBus. 
 const uint8_t AddressSpeedSensor       = 0x01;  // wind speed RS485 sensor ModBus address
 const uint8_t AddressDirSensor         = 0x02;  // wind direction RS485 sensor ModBus address
-const float OnBoardDividerCorrection   = 0.38;  // Difference in Volts to correct the onboard voltage divider. For a perfect precision, measure the voltage on the power connector and adjust this parameter to match.
+const float OnBoardDividerCorrection   = 0.38;  // Difference in Volts to correct the onboard voltage value. For a prefect precision, measure the voltage on the power connector and adjust this parameter to match.
 
 /***************************************************
    Station coordinates
 ***************************************************/
 const String CALLSIGN                 = "NOCALL-13"; // callsign with SSID ex TK5EP-13
-const float latitude                  = 0.0000; // latitude in DD.MMMM like 41.94917
-const float longitude                 = 0.0000; // longitude in DD.MMMM like 8.75430
-const uint16_t ALTITUDE               = 0;      // home altitude in meters
-#define WITH_SEALEVELPRESSURE                    // if pressure reported to sealevel is wanted
+const float latitude                  = 41.954426;  // latitude in DD.MMMM
+const float longitude                 = 8.699275;   // longitude in DD.MMMM
+const uint16_t ALTITUDE               = 760;        // station altitude in meters
+#define WITH_SEALEVELPRESSURE                       // if pressure reported at sealevel is wanted
 
 /***************************************************
    WIFI
 ***************************************************/
-#define wifi_ssid              "WIFI_SSID"        // Change this to your WiFi SSID
-#define wifi_password          "WIFI_PASSWORD"    // Change this to your WiFi password
-//#define WITH_STATIC_IP           			  		  // if static address wanted
-const IPAddress local_IP(44, 168, 80, 141);		  // Set your Static IP address like xxx,xxx,xxx,xxx
-const IPAddress gateway(44, 168, 80, 129);		  // Set your Gateway IP address
-const IPAddress subnet(255, 255, 255, 240);       // Set your subnet mask
-const IPAddress primaryDNS(44, 168, 80, 129);     // optional, put 8.8.8.8 if you don't know
-//IPAddress secondaryDNS(8, 8, 4, 4); 		  	     // optional
+#define wifi_ssid              ""                     // Change this to your WiFi SSID
+#define wifi_password          ""      // Change this to your WiFi password
+//#define WITH_STATIC_IP           			  		      // true=static address or false=DHCP
+const IPAddress local_IP(44, 168, 80, 141);		      // Set your Static IP address like xxx,xxx,xxx,xxx
+const IPAddress gateway(44, 168, 80, 129);		      // Set your Gateway IP address
+const IPAddress subnet(255, 255, 255, 240);			   // Set your subnet mask
+const IPAddress primaryDNS(44, 168, 80, 129);		  	// optional, put 8.8.8.8 if you don't know
+//IPAddress secondaryDNS(8, 8, 4, 4); 		  	         // optional
 
 /***************************************************
    APRS LoRa
 ***************************************************/
 const float TXFREQUENCY                = 433.775;  // TX frequency in MHz
-const int   TXPERIOD                   = 300;      // TX period in seconds
+const int   TXPERIOD                   = 300 ;     // TX period in seconds
 const int   MQTTPERIOD                 = 15;       // MQTT period in seconds
-const int   TXPOWER                    = 20;       // power in dBm. 20 max for boards with SX1278 and 22 for SX1268
+const int   TXPOWER                    = 20;       // power in dBm 20 max for boards with SX1278 and 22 for SX1268
 #define     COMMENT                    ""          // short info in beacon. Leave blank if not wanted
 #define     WITH_DIGIPEATING                       // if we want the APRS frames to be repeated (adds WIDE1-1)
 
 /***************************************************
    APRS-IS
 ***************************************************/
-#define APRS_IS_PASSWD   "11111"				        // APRS IS password, get it at https://apps.magicbug.co.uk/passcode/
-#define APRS_IS_SERVER   "rotate.aprs.net"        // APRS server address, ie rotate.aprs.net
-const int APRS_IS_SERVER_PORT = 14580;			     // APRS server port, default 14580
+#define APRS_IS_PASSWD   ""						      // APRS IS password, get it at https://apps.magicbug.co.uk/passcode/
+#define APRS_IS_SERVER   "rotate.aprs.net" // APRS server address, ie rotate.aprs.net
+const int APRS_IS_SERVER_PORT = 14580;						// APRS server port, default 14580
 
 /***************************************************
    WUNDERGROUND
 ***************************************************/
 #define WG_server "weatherstation.wunderground.com"   // Wunderground server address
-#define WG_ID     "WG_ID"                          // Your WunderGround ID. You need to register to get this ID and Key
-#define WG_PWD    "WG_KEY"                          // Your WunderGround key
+#define WG_ID     ""                          // Your WunderGround ID. You need to register to get this ID and Key
+#define WG_PWD    ""                          // Your WunderGround key
 
 /***************************************************
    MQTT Broker
 ***************************************************/
-#define mqtt_broker          "broker_address"       // the MQTT server
-const int mqtt_port           = 1883;					 // MQTT server port 1883 by default
-const byte mqtt_retained      = 0;                  // should the datas be retained ?
-#define mqtt_username         ""							 // MQTT server username if needed, leave blank if not
-#define mqtt_password         ""							 // MQTT server password if needed, leave blank if not
-#define TOPIC_TEMP            "wx/temp"			    // topic for the temperature
-#define TOPIC_HUMI            "wx/humi"			    // topic for the humidity
-#define TOPIC_PRESS           "wx/press"			    // topic for the pressure
-#define TOPIC_WINDSPEED       "wx/windspeed"	       // topic for the wind speed
-#define TOPIC_WINDDIR         "wx/winddir"		    // topic for the wind direction
-#define TOPIC_GUSTSPEED       "wx/gustspeed"	       // topic for the wind speed
-#define TOPIC_GUSTDIR         "wx/gustdir"		    // topic for the wind direction
-#define TOPIC_RAIN1H          "wx/rain1h"			    // topic for the rain fall
-#define TOPIC_RAIN24H         "wx/rain24h"		    // topic for the 24 h rain fall
-#define TOPIC_WINDSPEEDSENSOR "wx/windspeedsensor"  // topic to check if the RS485 dialog is OK
-#define TOPIC_WINDDIRSENSOR   "wx/winddirsensor"    // topic to check if the RS485 dialog is OK
-#define TOPIC_BATTERYVOLTAGE  "wx/batteryvoltage"   // topic to monitor the battery voltage
+#define mqtt_broker          ""// the MQTT server
+const int mqtt_port           = 1883;					    // MQTT server port 1883 by default
+const byte mqtt_retained      = 1;                     // should the datas be retained ?
+#define mqtt_username         ""							    // MQTT server username if needed, leave blank if not
+#define mqtt_password         ""							    // MQTT server password if needed, leave blank if not
+#define TOPIC_TEMP            "wx/punta/temp"			    // topic for the temperature
+#define TOPIC_HUMI            "wx/punta/humi"			    // topic for the humidity
+#define TOPIC_PRESS           "wx/punta/press"			    // topic for the pressure
+#define TOPIC_WINDSPEED       "wx/punta/windspeed"	    // topic for the wind speed
+#define TOPIC_WINDDIR         "wx/punta/winddir"		    // topic for the wind direction
+#define TOPIC_GUSTSPEED       "wx/punta/gustspeed"	    // topic for the wind speed
+#define TOPIC_GUSTDIR         "wx/punta/gustdir"		    // topic for the wind direction
+#define TOPIC_RAIN1H          "wx/punta/rain1h"			    // topic for the rain fall
+#define TOPIC_RAIN24H         "wx/punta/rain24h"		    // topic for the 24 h rain fall
+#define TOPIC_WINDSPEEDSENSOR "wx/punta/windspeedsensor" // topic to check if the RS485 dialog is OK
+#define TOPIC_WINDDIRSENSOR   "wx/punta/winddirsensor"   // topic to check if the RS485 dialog is OK
+#define TOPIC_BATTERYVOLTAGE  "wx/punta/batteryvoltage"  // topic to monitor the battery voltage
 
 /***************************************************
    OTA
 ***************************************************/
-#define OTA_username       "root"                 // OTA access login
-#define OTA_password       "password"             // OTA access password
+#define OTA_username       ""                 // OTA access login
+#define OTA_password       ""                // OTA access password
 
 /***************************************************
    NTP
@@ -152,7 +153,7 @@ const int8_t DSToffset     = 120;
 #define      STDzone       "CET"
 const int8_t STDweek       = 0; //Last, First, Second, Third, Fourth (0 - 4)
 const int8_t STDwday       = 0; // Sun, Mon, Tue, Wed, Thu, Fri, Sat (0 - 7)
-const int8_t STDmonth      = 9;
+const int8_t STDmonth      = 10;
 const int8_t STDhour       = 3;
 const int8_t STDoffset     = 60;
 

@@ -8,7 +8,7 @@
 #if defined(WITH_BME280) || defined(WITH_BME680) || defined(WITH_BMP280)
     #ifdef WITH_BME280
       #include <Adafruit_BME280.h>
-      Adafruit_BME280   bme;
+      Adafruit_BME280 bme;
     #endif
     #ifdef WITH_BME680
       #include <Adafruit_BME680.h>
@@ -77,15 +77,15 @@
             // only BME280, BME680 have humidity sensor
             #if defined(WITH_BME280) || defined(WITH_BME680)
               humi  = bme.readHumidity();            // humidity in %
-              if (tempC > 100) {                    // Houston we've a problem ! BME has been disconnected or broken, restart to get at least a hand on the system with OTA
-                logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "BME280", "No answer anymore, reboot!");
-                ESP.restart();
-              }
             #else
               humi = 0.0;  
             #endif
             // all BOSCH sensors have temperature reading, so we read it on all sensors
             tempC = bme.readTemperature();        // tempC in Centigrade
+               if (tempC > 100) {                    // Houston we've a problem ! BME has been disconnected or broken, restart to get at least a hand on the system with OTA
+                logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "BME280", "No answer anymore, reboot!");
+                ESP.restart();
+              }
             // same for pressure            
             float p0 = (bme.readPressure() / 100);  // pressure in hPa without altitude correction
             #ifdef WITH_SEALEVELPRESSURE

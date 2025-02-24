@@ -55,12 +55,11 @@ String delayToString(int64_t time_us) {
     int64_t minutes = seconds / 60;
     int hours = minutes / 60;
     int days = hours / 24;
- 
-    int sec = seconds % 60;
     int min = minutes % 60;
+    //int sec = seconds % 60;
     hours   %= 24;
 
-    sprintf_P(buf, PSTR("%03dd:%02dh:%02dm:%02ds"),days,hours,min,sec );
+    sprintf_P(buf, PSTR("%03dd:%02dh:%02dm"),days,hours,min);
     s = buf;
 	return s;
 }

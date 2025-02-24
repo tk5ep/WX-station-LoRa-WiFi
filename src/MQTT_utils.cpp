@@ -37,7 +37,7 @@ namespace MQTT_Utils {
             String client_id = "WX-station";
             logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "MQTT", "Client %s connects MQTT broker %s", client_id.c_str(),mqtt_broker);
             if (mqttclient.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-                logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "MQTT", "Connection to broker %s",mqtt_broker);
+                logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "MQTT", "Connected to broker %s",mqtt_broker);
             } else {
                 logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "MQTT", "Connection failed with state %s",String(mqttclient.state()));
 //                delay(1000);

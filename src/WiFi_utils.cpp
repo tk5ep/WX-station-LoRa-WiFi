@@ -8,7 +8,7 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <ElegantOTA.h>
-#include "NTP.h"                    // github.com/sstaub/NTP.git
+#include <NTP.h>                    // github.com/sstaub/NTP.git
 #include "index.htm"
 
 extern logging::Logger  logger;
@@ -27,56 +27,32 @@ extern float windgustSpeed;
 extern String upTime;
 extern float batteryVoltage;
 extern AsyncWebServer server;
+extern AsyncEventSource events;
+
+
 
 namespace WiFi_Utils {
    /******************************************
   * processor for the Web page 
   *******************************************/
   String processor(const String& var){
-  if (var == "RESET")       return String(Reset_Reason);
-  if (var == "CALLSIGN")    return String(CALLSIGN);
-  if (var == "FREQUENCY")   return String(TXFREQUENCY,3);
-  if (var == "POWER")       return String(TXPOWER);  
-  //if (var == "VERSION")     return String(SOFTWARE_VERSION);
-  if (var == "VERSION_DATE") return String(SOFTWARE_DATE);
-
-
-  // arranging column 2 & 3 depending sensor used
-  if (var == "COL1") return "<div class=\"card\"><p><i class=\"fas fa-thermometer-half\"  style=\"color:#059e8a;\"></i> TEMPERATURE</p><p><span class=\"reading\"><span id=\"temp_html\">" +  String(tempC) + "</span> &deg;C</span></p></div>";
-
-  if (var == "COL2") { 
-      #if defined(WITH_BME280) || defined(WITH_BME680) || defined(WITH_SHT31)
-        return "<div class=\"card\"><p><i class=\"fas fa-tint\"style=\"color:#00add6;\"></i> HUMIDITY</p><p><span class=\"reading\"><span id=\"hum_html\">" + String(humi) +    "</span> &percnt;</span></p></div>";
-      #endif
-      # if defined(WITH_BMP280)
-        return "<div class=\"card\"><p><i class=\"fas fa-angle-double-down\" style=\"color:#e1e437;\"></i> PRESSURE</p><p><span class=\"reading\"><span id=\"press_html\">" + String(press) + "</span> hPa</span></p></div>";
-      #endif
-  }
-
-  if (var == "COL3") {
-      #if defined(WITH_BME280) || defined(WITH_BME680)// if BME280 or BME680 only, display pressure value SHT31 has no press sensor
-            return "<div class=\"card\"><p><i class=\"fas fa-angle-double-down\" style=\"color:#e1e437;\"></i> PRESSURE</p><p><span class=\"reading\"><span id=\"press_html\">" + String(press) + "</span> hPa</span></p></div>";
-      #endif  
-  }
-
-
-
-  #ifdef WITH_WIND
-      if (var == "WINDSPEED") return "<div class=\"card\"><p><i class=\"fas fa-flag\" style=\"color:#059e8a;\"></i> WIND SPEED</p><p><span class=\"reading\"><span id=\"windspeed_html\">" + String(windSpeed_avg2m) + "</span> km/h</span></p></div>";
-      if (var == "WINDDIR")   return "<div class=\"card\"><p><i class=\"fas fa-location-arrow\" style=\"color:#00add6;\"></i> WIND DIR</p><p><span class=\"reading\"><span id=\"winddir_html\">" + String(winDirAvg_2min) + "</span> &deg;</span></p></div>";
-      if (var == "GUSTSPEED") return "<div class=\"card\"><p><i class=\"fas fa-flag\" style=\"color:#FF0000;\"></i> GUST SPEED</p><p><span class=\"reading\"><span id=\"gustspeed_html\">" + String(windgustSpeed) + "</span> km/h</span></p></div>";
-      if (var == "GUSTDIR")   return "<div class=\"card\"><p><i class=\"fas fa-location-arrow\" style=\"color:#FF0000;\"></i> GUST DIR</p><p><span class=\"reading\"><span id=\"gustdir_html\">" + String(windgustDir) + "</span> &deg;</span></p></div>";
-  #endif
- 
-  #ifdef WITH_RAIN
-      if (var == "RAIN1H")    return "<div class=\"card\"><p><i class=\"fas fa-cloud-rain\" style=\"color:#059e8a;\"></i> RAIN 1h </p><p><span class=\"reading\"><span id=\"rain1h_html\">"  + String(rain1hmm)  + "</span> mm</span></p></div>";
-      if (var == "RAIN24H")   return "<div class=\"card\"><p><i class=\"fas fa-cloud-rain\" style=\"color:#00add6;\"></i> RAIN 24h</p><p><span class=\"reading\"><span id=\"rain24h_html\">" + String(rain24hmm) + "</span> mm</span></p></div>";
-  #endif
-
-  // display some parameters
-      if (var == "TXPERIOD")    return String(TXPERIOD);
-      if (var == "INTBATVOLT")  return String(batteryVoltage);
-      if (var == "UPTIME")      return String(upTime);
+  if (var == "RESET")         return String(Reset_Reason);
+  if (var == "CALLSIGN")      return String(CALLSIGN);
+  if (var == "FREQUENCY")     return String(TXFREQUENCY,3);
+  if (var == "POWER")         return String(TXPOWER);  
+  if (var == "VERSION_DATE")  return String(SOFTWARE_DATE);
+  if (var == "TEMPERATURE")   return String(tempC);
+  if (var == "HUMIDITY")      return String(humi);
+  if (var == "PRESSURE")      return String(press);
+  if (var == "WINDSPEED")     return String(windSpeed_avg2m);
+  if (var == "WINDDIR")       return String(winDirAvg_2min);
+  if (var == "GUSTSPEED")     return String(windgustSpeed);
+  if (var == "GUSTDIR")       return String(windgustDir);
+  if (var == "RAIN1H")        return String(rain1hmm);
+  if (var == "RAIN24H")       return String(rain24hmm);
+  if (var == "TXPERIOD")      return String(TXPERIOD);
+  if (var == "INTBATVOLT")    return String(batteryVoltage);
+  if (var == "UPTIME")        return String(upTime);
   #if defined WITH_APRS_LORA
       if (var == "WITHAPRS") return "<i class=\"fas fa-check\" style=\"color:#059e8a;\"></i>";
     #else
@@ -98,8 +74,11 @@ namespace WiFi_Utils {
       if (var == "WITHWG") return "<i class=\"fas fa-times\" style=\"color:#FF0000;\"></i>";
   #endif
   #ifdef WITH_WIFI
-      if (var == "WIFI") return "<tr><td>WiFi</td><td colspan=\"2\">SSID : " + String(WiFi.SSID()) +                  "</td><td colspan=\"2\">RSSI : " + String(WiFi.RSSI()) + "dBm</td></tr>";
-      if (var == "NTP") return "<tr><td>NTP</td>  <td colspan=\"2\">" + String(ntp.formattedTime("%d %B %Y")) + "</td><td colspan=\"2\">Time : "    + String(ntp.formattedTime("%T")) + "</td></tr>";
+      if (var == "SSID") return String(WiFi.SSID());
+      if (var == "RSSI") return String(WiFi.RSSI());
+      if (var == "NTPDATE") return String(ntp.formattedTime("%d %B %Y"));
+      if (var == "NTPTIME") return String(ntp.formattedTime("%T"));
+      //if (var == "RESTART") return String(ntp.formattedTime("%T"));
   #endif
   return String();
 }
@@ -155,6 +134,8 @@ void init() {
             // NTP
             ntp.ruleDST(DSTzone, DSTweek, DSTwday, DSTmonth, DSThour, DSToffset); 
             ntp.ruleSTD(STDzone, STDweek, STDwday, STDmonth, STDhour, STDoffset); 
+            //ntp.ruleSTD("CET", Last, Sun, Oct, 3, 60); 
+            //ntp.ruleSTD("CET", 0, 0, 10, 3, 60); 
             ntp.begin();
             #ifdef DEBUG_NTP
                 logger.log( logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "NTP", "STD time : %s", ntp.ruleSTD() );
@@ -171,6 +152,17 @@ void init() {
             server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
             request->send(200, "text/plain", "Free heap : " + String(ESP.getFreeHeap()));
             });
+
+            // Handle Web Server Events
+            events.onConnect([](AsyncEventSourceClient *client){
+              if(client->lastId()){
+                logger.log(logging::LoggerLevel::LOGGER_LEVEL_INFO, "WEB", "Client reconnected! Last message ID that it got is: %u",client->lastId());
+              }
+
+              client->send("hi!", NULL, millis(), 10000);
+            });
+
+            server.addHandler(&events);
             server.begin();
   }
 

@@ -23,7 +23,7 @@ void init() {
         logger.log(logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "SHT31", "SHT31 status %s", String(sht_status));
     #endif
     if (!sht_status) {
-        show_display("SHT31","","ERROR", "NOT FOUND", "CORRECT THIS",5000);
+        show_display("SHT31","","ERROR", "SENSOR NOT FOUND", "CORRECT THIS",5000);
         logger.log(logging::LoggerLevel::LOGGER_LEVEL_ERROR, "SHT31", "Couldn't find SHT31");
     }
 }

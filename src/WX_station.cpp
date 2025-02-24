@@ -21,7 +21,8 @@ measures wind gust/dir and stores every min and tracks max for past 10 min
 
 Updates :
 ---------
-071224 Correction of some small bugs introduced in previous version
+181224 Added MEASURE_PERIOD variable to adjust measure period as er request (in settings.h and WX_station.cpp)
+091224 Changed the Web server, it's now SSE. Correction of some small bugs introduced in previous version.
 181024 Correction in APRS string, humidity 100% was uncorrectly transmitted : (APRS_utils.cpp) (tnx F4FEB), Wifi_utils.cpp : replaced deprecated SEND_P, new Webserver libraries.
 170824 Corrections to avoid uptime overflow after about 46 days (Utils::DelayToString)
 080424 Bug correction in NTP daylight saving time.
@@ -95,7 +96,7 @@ Updates :
                          |___/                                   
 ********************************************************************/
 
-String SOFTWARE_DATE = "2024.12.07";
+String SOFTWARE_DATE = "2024.12.18";
 
 // ############ define counters ################
 byte seconds;                       // When it hits 60, increase the current minute
@@ -143,6 +144,8 @@ float tempC, tempF, humi, press, batteryVoltage;
 #ifdef WITH_WIFI
     // Create AsyncWebServer object on port 80
     AsyncWebServer server(80);
+    // Create an Event Source on /events
+    AsyncEventSource events("/events");
     WiFiUDP wifiUdp;
     NTP ntp(wifiUdp);
 #endif
@@ -247,7 +250,7 @@ void mainloop() {
       logger.log(logging::LoggerLevel::LOGGER_LEVEL_DEBUG, "RAIN", "Raincount : %s",String(rainCount));
     #endif
 
-    // read wind sensors anc calculate wind infos
+    // read wind sensors and calculate wind infos
     #ifdef WITH_WIND
         RS485WindSpeedSensorTimeout = false;    // set the timeout flags
         RS485WindDirSensorTimeout   = false;
@@ -308,14 +311,6 @@ void mainloop() {
           #endif
       #endif
 
-      // read BOSCH sensor if exists
-      #if defined(WITH_BME280) || defined(WITH_BME680) || defined(WITH_BMP280) 
-        BOSCH_Utils::read();
-      #endif
-      // read SHT31 if exists
-      #ifdef WITH_SHT31
-        SHT31_Utils::read();   
-      #endif
 
       // prepare the APRS packet
       // DEBUG
@@ -399,12 +394,50 @@ void mainloop() {
 
     }  // END if TXperiod or first loop
     
-    // update OLED display every second
+    // events to check if new datas ar present
+    events.send("ping",NULL,millis());
+    events.send(String(batteryVoltage),"batteryVoltage");
+    events.send(String(tempC),"temperature");
+    events.send(String(humi),"humidity");
+    #ifdef WITH_SHT31
+      events.send("n/a","pressure");
+      #else
+      events.send(String(press),"pressure");
+    #endif
+    #ifdef WITH_WIND
+      events.send(String(windSpeed_avg2m),"windspeed");
+      events.send(String(winDirAvg_2min),"winddir");
+      events.send(String(windgustSpeed),"gustspeed");
+      events.send(String(windgustDir),"gustdir");
+    #else
+      events.send("n/a","windspeed");
+      events.send("n/a","winddir");
+      events.send("n/a","gustspeed");
+      events.send("n/a","gustdir");
+    #endif
+    #ifdef WITH_RAIN
+      events.send(String(rain1hmm),"rain1hmm");
+      events.send(String(rain24hmm),"rain24hmm");
+    #else
+      events.send("n/a","rain1hmm");
+      events.send("n/a","rain24hmm");
+    #endif
+    events.send(String(WiFi.SSID()),"ssid");
+    events.send(String(WiFi.RSSI()),"rssi");
+    events.send(upTime,"uptime");
+    events.send(String(ntp.formattedTime("%d %b %Y")),"ntpdate");
+    events.send(String(ntp.formattedTime("%T")),"ntptime");
+
+    // every second
+    // update OLED display
     Utils::PrintOLED();
     
     // every minute do what has to be done
     if (++seconds > 59) {                     // when a minute is past
             seconds = 0;
+            int64_t microSecondsSinceBoot = esp_timer_get_time();
+            upTime = Utils::delayToString(microSecondsSinceBoot);
+
             #ifdef WITH_WIND
                   // reset the stored values in array for next min
                   windgust_10m[minutes_10m+1] = 0;
@@ -440,10 +473,21 @@ void mainloop() {
          
     } // end minute count
 
+    // every MEASURE_PERIOD seconds 
+    if (seconds % MEASURE_PERIOD == 0) {
+      // read BOSCH sensor if exists
+      #if defined(WITH_BME280) || defined(WITH_BME680) || defined(WITH_BMP280) 
+        BOSCH_Utils::read();
+      #endif
+      // read SHT31 if exists
+      #ifdef WITH_SHT31
+        SHT31_Utils::read();   
+      #endif
+    } // END 
+
     // every 10 seconds 
     if (seconds % 10 == 0) {
-          int64_t microSecondsSinceBoot = esp_timer_get_time();
-          upTime = Utils::delayToString(microSecondsSinceBoot);
+
     } // END every 10s
 
     //counts every 2 min
