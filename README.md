@@ -1,5 +1,6 @@
 # WX-station-LoRa-WiFi
 ⚠️ Latest software versions :<br/>
+2024-12-18 Web server is now asynchrone. New parameters added to set data display rate.<br/>
 2024-12-07 Some small bug corrections.<br/>
 2024-10-18 Some small corrections, new Webserver librairies<br/>
 2024-08-17 Corrections to avoid uptime overflow after about 46 days (Utils::DelayToString)<br/>
