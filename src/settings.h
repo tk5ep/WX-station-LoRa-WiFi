@@ -166,7 +166,7 @@ const int8_t STDoffset     = 60;
 #if defined(LILYGO_T3_V1_6)
 // define pins for a TTGO T3 module
    const byte PIN_CHANGE_ADDRESS = 25; // connect this pin to 3V3 at boot to change RS485 address. Green LED lights to warn that it is the case
-   const byte interruptPinRain   = 14; // rain sensor pin
+   const byte interruptPinRain   = 35; // rain sensor pin
 // pins 4 & 34 are used by UART0 hardwareserial for the RS485 bus
 // pins 21 & 22 for the i2C bus
 #endif
