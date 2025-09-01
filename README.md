@@ -1,6 +1,6 @@
 # WX-station-LoRa-WiFi
 ⚠️ Latest software versions :<br/>
-2025-08-28 Changed NTP library version to 1.7. Localy as PIO is at older 1.6 version.<br/>
+2025-08-28 Changed NTP library version to 1.7. (to correct DST bug)<br/>
 2024-12-18 Web server is now asynchrone. New parameters added to set data display rate.<br/>
 2024-12-07 Some small bug corrections.<br/>
 2024-10-18 Some small corrections, new Webserver librairies<br/>
