@@ -1,6 +1,6 @@
 # WX-station-LoRa-WiFi
 ⚠️ Latest software versions :<br/>
-2025-12-01 Added ModBus rain sensor, corrected bug, use library for circular rain calculation.<br />
+2025-12-01 Added ModBus rain sensor, corrected small bugs, use library for circular rain calculation.<br />
 2025-08-28 Changed NTP library version to 1.7. (to correct DST bug)<br/>
 2024-12-18 Web server is now asynchrone. New parameters added to set data display rate.<br/>
 2024-12-07 Some small bug corrections.<br/>
