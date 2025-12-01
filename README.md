@@ -1,5 +1,6 @@
 # WX-station-LoRa-WiFi
 ⚠️ Latest software versions :<br/>
+2025-12-01 Added ModBus rain sensor, corrected bug, use library for circular rain calculation.
 2025-08-28 Changed NTP library version to 1.7. (to correct DST bug)<br/>
 2024-12-18 Web server is now asynchrone. New parameters added to set data display rate.<br/>
 2024-12-07 Some small bug corrections.<br/>
@@ -30,8 +31,8 @@ The rain fall is measured with a rain bucket gauge.
 The used module is a TTGO T3 v1.6.1 bought on Aliexpress at the [LilyGo shop](https://lilygo.aliexpress.com/store/2090076), i can only recommend.<br><br>
 The wind speed and direction sensors are a ModBus RS485 version that can be found [here on Aliexpress](https://www.aliexpress.com/item/1005005500304078.html)<br>
 There are different models for RS485 sensors. Be aware that the library used here has been written by me for the above sensors.<br>
-The main difference is that the ModBus address is set by writing into a register, not sending a ModBus command.<br><br>
-The temperature, humidity and pressure sensor is a very classical BME280 board found on Aliexpress.The SHT31 works also.<br><br>
+The same for the RS485 optical rain sensor. (https://www.aliexpress.com/item/1005009683396810.html)<br><br>
+The temperature, humidity and pressure sensor is a very classical BME280 board found on Aliexpress.The SHT31 is also supported.<br><br>
 
 **Sofware :**
 
